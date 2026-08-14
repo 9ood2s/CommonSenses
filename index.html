@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>commonsenses</title>
+<meta name="description" content="한 번은 알아둬야 하는 것들을, 끝까지 보게 되는 형식으로 만들어 둡니다.">
+<meta name="theme-color" content="#13141C">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="commonsenses">
+<meta property="og:description" content="한 번은 알아둬야 하는 것들을, 끝까지 보게 되는 형식으로 만들어 둡니다.">
+<meta property="og:url" content="https://9ood2s.github.io/commonsenses/">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400&display=swap');
+:root{
+  --void:#13141C; --coal:#1C1E28; --edge:#414658;
+  --paper:#F3EFE5; --seal:#D4483A; --gold:#E5C078; --gold2:#B08F4E;
+  --text:#D6DAE4; --dim:#A2A8B8; --mute:#7A8093;
+  --disp:'Gowun Batang','Nanum Myeongjo','Apple SD Gothic Neo',serif;
+  --body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--void)}
+body{
+  font-family:var(--body);color:var(--text);min-height:100vh;
+  display:flex;flex-direction:column;position:relative;overflow-x:hidden;
+  background:
+    radial-gradient(ellipse 130% 62% at 50% 0%, #2F3242 0%, transparent 62%),
+    radial-gradient(ellipse 100% 48% at 50% 100%, #2A1A20 0%, transparent 58%),
+    var(--void);
+}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.14;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px)}
+.wrap{width:100%;max-width:760px;margin:0 auto;padding:0 24px;position:relative;z-index:3;flex:1;
+  display:flex;flex-direction:column;justify-content:center;gap:44px;padding-top:96px;padding-bottom:72px}
+
+.hd{display:flex;flex-direction:column;gap:14px}
+.mk{width:60px;height:60px}
+.mk svg{width:100%;height:100%}
+h1{font-family:var(--mono);font-size:clamp(30px,5vw,42px);font-weight:400;color:var(--paper);letter-spacing:.02em}
+h1 span{color:var(--seal)}
+.tag{color:var(--dim);font-size:16px;line-height:1.85;max-width:520px}
+
+.list{display:flex;flex-direction:column;gap:14px}
+.lbl{font-family:var(--mono);font-size:12.5px;letter-spacing:.18em;color:var(--gold2)}
+.card{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;
+  border:1px solid var(--edge);background:rgba(28,30,40,.72);padding:20px 22px;
+  text-decoration:none;color:inherit;transition:.18s}
+.card:hover,.card:focus-visible{border-color:var(--gold);background:rgba(40,43,56,.8);outline:none}
+.card .no{font-family:var(--mono);font-size:12px;color:var(--mute);letter-spacing:.1em;
+  border:1px solid var(--edge);padding:8px 10px;line-height:1}
+.card h2{font-family:var(--disp);font-size:23px;font-weight:700;color:var(--paper);line-height:1.35}
+.card h2 em{font-style:normal;color:var(--seal);font-family:var(--mono);font-size:12.5px;
+  letter-spacing:.16em;display:block;margin-top:6px}
+.card p{color:var(--dim);font-size:14.5px;line-height:1.8;margin-top:9px}
+.card .meta{font-family:var(--mono);font-size:12px;color:var(--mute);margin-top:8px;letter-spacing:.04em}
+.card:hover h2{color:#fff}
+
+.ftr{position:relative;z-index:3;border-top:1px solid var(--edge);padding:20px 24px 28px;
+  display:flex;gap:5px 22px;flex-wrap:wrap;justify-content:center;
+  font-family:var(--mono);font-size:13px;letter-spacing:.04em;color:var(--mute)}
+.ftr b{color:var(--dim);font-weight:400}
+.ftr a{color:#9AA0B2;text-decoration:none;border-bottom:1px solid rgba(154,160,178,.3);transition:.16s}
+.ftr a:hover{color:var(--gold);border-bottom-color:var(--gold2)}
+.ftr a:focus-visible{outline:1px solid var(--gold);outline-offset:3px}
+.ftr a i{font-style:normal;color:#5F6577;margin-left:6px;border:0}
+@media (max-width:520px){
+  .wrap{padding-top:64px;gap:34px}
+  .card{grid-template-columns:1fr;gap:12px}
+  .card .no{justify-self:start}
+  .ftr{gap:4px 14px;font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hd">
+    <div class="mk"><svg viewBox="0 0 100 100">
+      <rect x="8" y="8" width="84" height="84" fill="none" stroke="#B4342A" stroke-width="3"/>
+      <rect x="16" y="16" width="68" height="68" fill="none" stroke="#B4342A" stroke-width="1" opacity=".55"/>
+      <path d="M30 34 H70 M30 50 H70 M30 66 H58" stroke="#B4342A" stroke-width="4" stroke-linecap="square"/>
+      <circle cx="66" cy="66" r="7" fill="#B4342A"/></svg></div>
+    <h1>common<span>senses</span></h1>
+    <p class="tag">한 번은 알아둬야 하는 것들을, 끝까지 보게 되는 형식으로 만들어 둡니다.<br>
+      전부 무료입니다. 가입도 설치도 없습니다.</p>
+  </header>
+
+  <section class="list">
+    <div class="lbl">지금 있는 것</div>
+    <a class="card" href="vibe-coding/">
+      <span class="no">01</span>
+      <span>
+        <h2>신입사원<em>THE VIBE CODER</em></h2>
+        <p>AI에게 코드를 시키는 법 — 입문에서 중급까지. 15년차 개발자가 입사 첫날로 돌아가
+          무엇을 맡기고 무엇을 직접 확인해야 하는지 배운다.</p>
+        <span class="meta">4막 21화 · 173문항 · 2026.08</span>
+      </span>
+    </a>
+  </section>
+</div>
+
+<footer class="ftr">
+  <span>만든 곳 · <b>supalabs</b></span>
+  <a href="https://supaclass.co" target="_blank" rel="noopener">supaclass.co<i>학급운영</i></a>
+  <a href="https://supapad.co" target="_blank" rel="noopener">supapad.co<i>수업 보드</i></a>
+</footer>
+
+</body>
+</html>
