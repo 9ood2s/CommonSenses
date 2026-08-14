@@ -1850,10 +1850,14 @@ function pow(){return 20+4*(P.lv-1);}
 function needX(){return 80*P.lv;}
 function cl(c){return P.done.indexOf(c)>=0;}
 function op(i){return i===0||cl(EPS[i-1].code);}
-function save(){try{if(window.storage&&window.storage.set)window.storage.set(KEY,JSON.stringify(P),false);}catch(e){}}
+function save(){try{var s=JSON.stringify(P);
+  if(window.storage&&window.storage.set)window.storage.set(KEY,s,false);
+  else if(window.localStorage)localStorage.setItem(KEY,s);}catch(e){}}
 function load(cb){var f=false,e=function(){if(!f){f=true;cb();}};
+  var pull=function(v){try{if(v){var d=JSON.parse(v);for(var k in d)if(k in P)P[k]=d[k];}}catch(x){}};
   try{if(window.storage&&window.storage.get){window.storage.get(KEY,false).then(function(r){
-    if(r&&r.value){var d=JSON.parse(r.value);for(var k in d)if(k in P)P[k]=d[k];}e();}).catch(e);setTimeout(e,2500);return;}}catch(x){}
+    pull(r&&r.value);e();}).catch(e);setTimeout(e,2500);return;}}catch(x){}
+  try{if(window.localStorage)pull(localStorage.getItem(KEY));}catch(x){}
   e();}
 
 var $=function(i){return document.getElementById(i);};
