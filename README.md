@@ -1,9 +1,9 @@
-# commonsenses
+# CommonSenses
 
 한 번은 알아둬야 하는 것들을, 끝까지 보게 되는 형식으로 만들어 둡니다.
 전부 무료입니다. 가입도 설치도 없습니다.
 
-**→ <https://9ood2s.github.io/commonsenses/>**
+**→ <https://9ood2s.github.io/CommonSenses/>**
 
 ## 지금 있는 것
 
@@ -11,7 +11,7 @@
 
 AI에게 코드를 시키는 법 — 입문에서 중급까지. 4막 21화 · 173문항.
 
-<https://9ood2s.github.io/commonsenses/vibe-coding/>
+<https://9ood2s.github.io/CommonSenses/vibe-coding/>
 
 15년차 개발자가 입사 첫날로 돌아가, 무엇을 AI에게 맡기고 무엇을 직접 확인해야 하는지 배웁니다.
 개념·도구·프롬프트·컨텍스트 관리에서 시작해 검증과 디버깅, 보안과 배포, 성능과 비용, 협업과 유지보수까지 이어집니다.
