@@ -231,7 +231,7 @@
   }
   function baseTime(){return Math.max(16,26-STORY[state.current].act*2);}
   function shuffledQuestion(){
-    return run.questions[run.qCursor++%run.questions.length];
+    return run.questions[run.qCursor++];
   }
   function renderQuestion(reuseCurrent){
     clearTimer();
@@ -318,7 +318,7 @@
     document.getElementById('feedbackText').textContent=(correct?'평판 +2. ':'평판 '+(timedOut?'−8. ':'−6. '))+beat.explanation;
     document.getElementById('feedbackFact').textContent=beat.fact;
     if(run.foeHp<=0)feedbackMode='win';
-    else if(run.trust<=0)feedbackMode='lose';
+    else if(run.trust<=0||run.qCursor>=run.questions.length)feedbackMode='lose';
     else feedbackMode='next';
     feedbackButton.textContent=feedbackMode==='win'?'설전 마무리':feedbackMode==='lose'?'패배 확인':'다음 공방';
     feedbackButton.focus({preventScroll:true});
@@ -373,8 +373,8 @@
     screens.end.classList.add('failed');
     document.querySelector('.end-mark').textContent='敗';
     document.getElementById('completeAct').textContent=chapter.act+'막 · '+String(chapter.no).padStart(2,'0')+'장 · 설전 패배';
-    document.getElementById('completeTitle').textContent='신뢰가 먼저 무너졌다';
-    document.getElementById('completeSummary').textContent='상대의 논리 방어선을 넘지 못했다. 이 장은 해금되지 않는다. 미래 기억 브리핑을 다시 읽고 재도전해야 한다.';
+    document.getElementById('completeTitle').textContent='근거가 하나 부족했다';
+    document.getElementById('completeSummary').textContent='서로 다른 두 문제를 모두 지키지 못해 상대의 논리 방어선이 남았다. 이 장은 해금되지 않는다. 미래 기억 브리핑을 다시 읽고 재도전해야 한다.';
     document.getElementById('endStats').innerHTML=resultStats();
     document.getElementById('evidenceTitle').textContent=chapter.evidenceTitle;
     document.getElementById('evidenceText').textContent=chapter.evidenceText;
