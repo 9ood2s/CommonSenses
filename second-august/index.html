@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101326">
+<title>두 번째 광복절 · CommonSenses</title>
+<meta name="description" content="한 번의 말실수로 모든 것을 잃은 아이돌 강해원. 과거로 돌아간 그녀가 한국사를 다시 배우며 같은 질문 앞에 선다.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="두 번째 광복절">
+<meta property="og:description" content="이름을 잊은 스타, 역사를 다시 만나다. 5막 20장의 한국사 회귀 드라마.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="preload" as="image" href="assets/characters/haewon-neutral.jpg">
+<link rel="preload" as="image" href="assets/characters/ahn-jung-geun.jpg">
+</head>
+<body>
+<div class="app" id="app">
+  <a class="supapad-ci" href="https://supapad.co" target="_blank" rel="noopener" aria-label="supapad 홈페이지">
+    <svg viewBox="0 0 150 40" role="img" aria-label="supapad" fill="currentColor">
+      <rect x="3" y="3" width="34" height="34" rx="10" fill="#0d9bb0"></rect>
+      <path d="M12 28 L20 13 L28 28" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      <circle cx="20" cy="11" r="2.2" fill="#dc8a0f"></circle>
+      <text x="47" y="27" font-family="'Helvetica Neue','Pretendard',Arial,system-ui,sans-serif" font-size="21" letter-spacing="-0.6" fill="currentColor"><tspan font-weight="800">supa</tspan><tspan font-weight="400">pad</tspan></text>
+    </svg>
+  </a>
+
+  <header class="topbar" id="topbar" hidden>
+    <button class="icon-btn" id="mapButton" type="button" aria-label="장 목록 열기">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="chapter-id">
+      <b id="actLabel">1막</b>
+      <span id="chapterLabel">01</span>
+    </div>
+    <div class="reputation" aria-label="현재 평판">
+      <span>평판</span>
+      <b id="reputationCount">50</b>
+    </div>
+    <button class="memory" id="memoryButton" type="button" aria-label="습득한 역사 지식 열기">
+      <span>기억</span>
+      <b id="memoryCount">0</b><i>/ 40</i>
+    </button>
+  </header>
+
+  <main>
+    <section class="screen title-screen" id="titleScreen">
+      <div class="title-copy">
+        <p class="eyebrow">COMMONSENSES · KOREAN HISTORY</p>
+        <h1>두 번째<br><em>광복절</em></h1>
+        <p class="title-en">THE SECOND AUGUST</p>
+        <p class="logline">이름을 잊은 스타,<br>역사를 다시 만나다.</p>
+      </div>
+      <div class="title-portrait" aria-hidden="true">
+        <div class="sun-disc"></div>
+        <img src="assets/characters/haewon-neutral.jpg" alt="" width="640" height="960" fetchpriority="high" decoding="sync">
+        <span class="past-tag">2034.08.15</span>
+        <span class="return-tag">다시, 2027</span>
+      </div>
+      <div class="title-actions">
+        <div class="load-state" id="loadState" role="status">초상화를 준비하고 있습니다</div>
+        <button class="primary" id="startButton" type="button" disabled>새로 시작</button>
+        <button class="secondary" id="continueButton" type="button" hidden>이어하기</button>
+        <button class="text-button" id="sourcesButton" type="button">자료와 이용 안내</button>
+      </div>
+    </section>
+
+    <section class="screen map-screen" id="mapScreen" hidden>
+      <div class="map-head">
+        <p class="eyebrow">EPISODE MAP</p>
+        <h2>해원이 다시 만날 장면들</h2>
+        <p>정답을 외우는 대신, 다음 장면을 바꾸는 근거를 모읍니다.</p>
+      </div>
+      <div class="act-list" id="actList"></div>
+      <div class="map-actions">
+        <button class="secondary knowledge-open" id="mapKnowledgeButton" type="button">습득 지식</button>
+        <button class="secondary" id="mapHomeButton" type="button">첫 화면</button>
+        <button class="primary" id="mapContinueButton" type="button">계속하기</button>
+      </div>
+    </section>
+
+    <section class="screen knowledge-screen" id="knowledgeScreen" hidden>
+      <div class="knowledge-head">
+        <div>
+          <p class="eyebrow">MEMORY ARCHIVE</p>
+          <h2>기억 보관함</h2>
+          <p>설전에서 직접 맞힌 지식과 클리어한 장의 핵심 근거만 쌓입니다.</p>
+        </div>
+        <div class="knowledge-score"><span>습득</span><b id="knowledgeCount">0</b><i>/ 40</i></div>
+      </div>
+      <div class="knowledge-empty" id="knowledgeEmpty" hidden>
+        <b>아직 되찾은 기억이 없습니다</b>
+        <p>첫 설전에서 정답을 맞히면 복습 카드가 이곳에 열립니다.</p>
+      </div>
+      <div class="knowledge-list" id="knowledgeList"></div>
+      <div class="knowledge-actions">
+        <button class="secondary" id="knowledgeBackButton" type="button">이전 화면</button>
+        <button class="primary" id="knowledgeContinueButton" type="button">계속 학습하기</button>
+      </div>
+    </section>
+
+    <section class="screen story-screen" id="storyScreen" hidden>
+      <div class="scene-head">
+        <p id="sceneDate">2027.08.14</p>
+        <h2 id="sceneTitle">장 제목</h2>
+        <span id="scenePlace">장소</span>
+      </div>
+      <div class="story-stage" id="storyStage">
+        <div class="portrait-shell" id="portraitShell">
+          <div class="portrait-accent"></div>
+          <img id="portrait" src="assets/characters/haewon-neutral.jpg" alt="강해원" width="640" height="960" decoding="sync">
+          <div class="portrait-meta">
+            <b id="speaker">강해원</b>
+            <span id="speakerRole">LUCID · 센터</span>
+          </div>
+        </div>
+        <article class="dialogue-card" id="dialogueCard">
+          <p class="beat-label" id="beatLabel">SCENE</p>
+          <div class="dialogue-text" id="dialogueText"></div>
+          <button class="next-button" id="nextButton" type="button">계속</button>
+        </article>
+        <article class="duel-intro" id="duelIntro" hidden>
+          <p class="beat-label">설전 진입</p>
+          <span class="duel-kicker" id="duelRole"></span>
+          <h3 id="duelName"></h3>
+          <blockquote id="duelQuote"></blockquote>
+          <div class="duel-rule">
+            <b>승리 조건</b>
+            <p>브리핑의 근거로 두 문제를 모두 맞히면 상대의 논리 방어선이 무너진다. 오답이나 시간 초과는 신뢰와 평판을 깎고, 신뢰가 0이 되면 패배한다.</p>
+          </div>
+          <p class="tactic-label">어떻게 맞설 것인가</p>
+          <div class="tactics">
+            <button type="button" data-tactic="trust"><b>근거부터 짚는다</b><span>시작 신뢰 +20</span></button>
+            <button type="button" data-tactic="time"><b>기억을 끌어낸다</b><span>첫 문제 제한시간 +6초</span></button>
+          </div>
+        </article>
+        <article class="briefing-card" id="briefingCard" hidden>
+          <p class="beat-label">미래 기억 열람</p>
+          <h3 id="briefingTitle"></h3>
+          <p class="briefing-sub" id="briefingSub"></p>
+          <div class="briefing-grid" id="briefingBody"></div>
+          <div class="briefing-rule" id="briefingRule"></div>
+          <button class="next-button" id="briefingStartButton" type="button">설전 시작</button>
+        </article>
+        <article class="quiz-card" id="quizCard" hidden>
+          <div class="duel-hud">
+            <div><span id="foeStatusName">상대 논리</span><div class="duel-bar foe-bar"><i id="foeBar"></i></div><b id="foeHp">100 / 100</b></div>
+            <em>VS</em>
+            <div><span>강해원 신뢰</span><div class="duel-bar trust-bar"><i id="trustBar"></i></div><b id="trustHp">100 / 100</b></div>
+          </div>
+          <div class="quiz-top">
+            <p class="beat-label" id="quizLabel">사료 확인</p>
+            <div class="timer-number"><b id="timerNumber">20</b>초</div>
+          </div>
+          <div class="timer-track"><i id="timerBar"></i></div>
+          <h3 id="quizPrompt"></h3>
+          <p class="quiz-context" id="quizContext"></p>
+          <div class="choices" id="choices"></div>
+          <div class="feedback" id="feedback" hidden aria-live="polite">
+            <b id="feedbackTitle"></b>
+            <p id="feedbackText"></p>
+            <small id="feedbackFact"></small>
+            <button class="next-button" id="feedbackButton" type="button">다음</button>
+          </div>
+        </article>
+      </div>
+      <div class="chapter-track" aria-hidden="true"><span id="chapterTrack"></span></div>
+    </section>
+
+    <section class="screen chapter-end" id="chapterEndScreen" hidden>
+      <div class="end-mark" aria-hidden="true">記</div>
+      <p class="eyebrow" id="completeAct">1막 · 완료</p>
+      <h2 id="completeTitle">첫 번째 장면을 바꿨다</h2>
+      <p id="completeSummary"></p>
+      <div class="end-stats" id="endStats"></div>
+      <div class="evidence-card">
+        <span>이번 장의 근거</span>
+        <b id="evidenceTitle"></b>
+        <p id="evidenceText"></p>
+      </div>
+      <button class="primary" id="nextChapterButton" type="button">다음 장</button>
+      <button class="secondary end-knowledge" id="endKnowledgeButton" type="button">습득 지식 복습</button>
+      <button class="text-button" id="endMapButton" type="button">장 목록 보기</button>
+    </section>
+
+    <section class="screen final-screen" id="finalScreen" hidden>
+      <div class="final-visual">
+        <img src="assets/characters/haewon-smile.jpg" alt="조용히 미소 짓는 강해원" width="640" height="960" loading="eager" decoding="sync">
+        <span>두 번째 광복절</span>
+      </div>
+      <div class="final-copy">
+        <p class="eyebrow">EPILOGUE · 효창공원</p>
+        <h2>이름을 기억한다는 것</h2>
+        <p>해원은 비어 있는 가묘 앞에 꽃 한 송이를 놓았다. 안중근 의사의 유해는 아직 고국으로 돌아오지 못했다.</p>
+        <blockquote>“이제야 압니다. 이름을 맞히는 건 시작일 뿐이라는 걸.”</blockquote>
+        <div class="final-score"><span>되찾은 기억</span><b id="finalScore">40 / 40</b></div>
+        <div class="final-score"><span>최종 평판</span><b id="finalReputation">50</b></div>
+        <button class="secondary" id="finalKnowledgeButton" type="button">습득 지식 복습</button>
+        <button class="primary" id="reviewButton" type="button">장면 다시 보기</button>
+        <button class="secondary" id="restartButton" type="button">기록 지우고 다시 시작</button>
+        <a class="home-link" href="../">CommonSenses 목록으로</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>만든 곳 · <b>supalabs</b></span>
+    <a href="https://supaclass.co" target="_blank" rel="noopener">supaclass.co</a>
+    <a href="https://supapad.co" target="_blank" rel="noopener">supapad.co</a>
+  </footer>
+</div>
+
+<dialog class="info-dialog" id="infoDialog">
+  <form method="dialog">
+    <button class="close-button" aria-label="닫기">×</button>
+    <p class="eyebrow">SOURCES & NOTE</p>
+    <h2>이야기와 역사</h2>
+    <p>강해원, LUCID, 문지안, 류채령과 소속사는 모두 가상입니다. 특정 연예인의 생애나 논란을 재현하지 않습니다. 역사적 인물·사건은 아래 공공 자료를 기준으로 구성했습니다.</p>
+    <ul>
+      <li><a href="https://i815.or.kr/memorial/museum/Museum28_AMM/html/index.html" target="_blank" rel="noopener">독립기념관 · 안중근의사기념관</a></li>
+      <li><a href="https://contents.history.go.kr/front/hm/view.do?levelId=hm_121_0030&treeId=010701" target="_blank" rel="noopener">국사편찬위원회 · 을사늑약 사료</a></li>
+      <li><a href="https://db.history.go.kr/modern/level.do?levelId=hdsr_007_0010_0010_0010" target="_blank" rel="noopener">한국사데이터베이스 · 3·1운동과 임시정부</a></li>
+      <li><a href="https://contents.history.go.kr/front/ta/print.do?levelId=ta_e71_0030_0030&whereStr=" target="_blank" rel="noopener">우리역사넷 · 민주화 운동 비교</a></li>
+      <li><a href="https://contents.history.go.kr/front/tg/print.do?levelId=tg_004_1940&treeId=&whereStr=" target="_blank" rel="noopener">우리역사넷 · 산미증식계획</a></li>
+      <li><a href="https://edu.mpva.go.kr/contpopup/contDetail.do?contNo=252" target="_blank" rel="noopener">국가보훈부 · 안중근 의사와 가묘</a></li>
+    </ul>
+    <p class="fineprint">학습용 서사이며 시험 범위 전체를 대신하지 않습니다. 논쟁적인 표현은 단정적인 구호보다 확인 가능한 사실과 맥락을 우선했습니다.</p>
+  </form>
+</dialog>
+
+<script src="story.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
