@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111419">
+  <title>0호 수장고 · 대본 편집실</title>
+  <style>
+    :root {
+      --bg: #101216;
+      --surface: #181b20;
+      --surface-2: #20242a;
+      --surface-3: #292e35;
+      --line: #353b43;
+      --line-strong: #4c555f;
+      --text: #f4f0e7;
+      --muted: #a3a9b0;
+      --dim: #6f7780;
+      --amber: #f0a04b;
+      --amber-soft: #332719;
+      --cyan: #64d4dc;
+      --cyan-soft: #173034;
+      --red: #ee7898;
+      --green: #72d2a2;
+      --radius: 16px;
+      --shadow: 0 18px 60px rgba(0, 0, 0, .24);
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 80% 0%, rgba(100, 212, 220, .07), transparent 28rem),
+        radial-gradient(circle at 10% 40%, rgba(240, 160, 75, .06), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+      letter-spacing: -.015em;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      min-height: 72px;
+      padding: 12px clamp(16px, 3vw, 38px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(16, 18, 22, .88);
+      backdrop-filter: blur(18px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--surface-3), #14171b);
+      color: var(--amber);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      box-shadow: inset 0 0 22px rgba(240,160,75,.07);
+    }
+    .brand span { display: block; color: var(--dim); font-size: 10px; letter-spacing: .11em; }
+    .brand h1 { margin: 2px 0 0; font-size: 17px; letter-spacing: -.035em; }
+    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+    .button {
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .button:hover { border-color: var(--line-strong); background: var(--surface-3); }
+    .button.primary { border-color: #b86d30; background: var(--amber); color: #23180d; }
+    .button.primary:hover { background: #f5ae64; }
+    .button.ghost { background: transparent; color: var(--muted); }
+    .button.danger { color: #ffabc1; }
+    .button.small { min-height: 32px; padding: 0 10px; font-size: 11px; }
+    .button.icon { width: 32px; min-height: 30px; padding: 0; }
+
+    .workspace {
+      width: min(1720px, 100%);
+      min-height: calc(100vh - 72px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 245px minmax(520px, 1fr) minmax(300px, 390px);
+    }
+
+    .lesson-rail {
+      position: sticky;
+      top: 72px;
+      height: calc(100vh - 72px);
+      padding: 26px 17px;
+      border-right: 1px solid var(--line);
+      overflow: auto;
+    }
+    .rail-label, .field-label, .preview-label {
+      display: block;
+      color: var(--dim);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .lesson-list { margin: 13px 0 22px; display: grid; gap: 7px; }
+    .lesson-button {
+      width: 100%;
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 9px;
+    }
+    .lesson-button:hover { background: rgba(255,255,255,.035); }
+    .lesson-button.active { border-color: var(--line-strong); background: var(--surface-2); }
+    .lesson-no {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--surface-3);
+      color: var(--dim);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .lesson-button.active .lesson-no { background: var(--amber); color: #21170c; }
+    .lesson-button b { display: block; font-size: 12px; line-height: 1.4; word-break: keep-all; }
+    .lesson-button small { display: block; margin-top: 4px; color: var(--dim); font-size: 9px; }
+
+    .rail-summary {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.02);
+    }
+    .rail-summary div { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; }
+    .rail-summary div + div { margin-top: 8px; }
+    .rail-summary span { color: var(--muted); }
+    .rail-summary b { color: var(--cyan); }
+
+    .editor-main { min-width: 0; padding: 34px clamp(20px, 3vw, 48px) 100px; }
+    .editor-heading { margin-bottom: 24px; }
+    .lesson-kicker { color: var(--amber); font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+    .editor-heading h2 { margin: 8px 0 7px; font-size: clamp(27px, 3vw, 42px); line-height: 1.12; letter-spacing: -.055em; }
+    .editor-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+
+    .lesson-fields, .scene-fields, .request-note {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(24, 27, 32, .82);
+      box-shadow: var(--shadow);
+    }
+    .lesson-fields { margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field.full { grid-column: 1 / -1; }
+    .field input, .field textarea {
+      width: 100%;
+      margin-top: 7px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #121519;
+      color: var(--text);
+      padding: 11px 12px;
+      line-height: 1.55;
+      resize: vertical;
+    }
+    .field input:hover, .field textarea:hover { border-color: var(--line-strong); }
+    .field input:focus, .field textarea:focus { border-color: var(--cyan); }
+    .field textarea { min-height: 78px; }
+
+    .scene-tabs {
+      margin: 26px 0 14px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .scene-tab {
+      min-height: 61px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--muted);
+      text-align: left;
+    }
+    .scene-tab span { display: block; font-size: 9px; font-weight: 850; letter-spacing: .08em; }
+    .scene-tab b { display: block; margin-top: 4px; color: inherit; font-size: 12px; }
+    .scene-tab.active { border-color: #936134; background: var(--amber-soft); color: #ffd3a2; }
+
+    .scene-fields { margin-bottom: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .scene-fields[hidden] { display: none; }
+    .scene-section-head { margin: 25px 0 12px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+    .scene-section-head h3 { margin: 0; font-size: 19px; }
+    .scene-section-head p { margin: 4px 0 0; color: var(--dim); font-size: 11px; }
+    .dialogue-list { display: grid; gap: 10px; }
+
+    .line-card {
+      position: relative;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+    .line-card.zero { border-left: 3px solid var(--red); }
+    .line-card.player { border-left: 3px solid var(--cyan); }
+    .line-card.moa { border-left: 3px solid var(--amber); }
+    .line-card-head { margin-bottom: 10px; display: grid; grid-template-columns: 38px minmax(110px, .7fr) minmax(160px, 1.3fr) auto; align-items: end; gap: 9px; }
+    .line-number {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--surface-3);
+      color: var(--dim);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .compact-input { min-width: 0; }
+    .compact-input span { display: block; margin: 0 0 5px; color: var(--dim); font-size: 9px; }
+    .compact-input input {
+      width: 100%;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #121519;
+      color: var(--text);
+      padding: 0 9px;
+      font-size: 11px;
+    }
+    .line-tools { display: flex; gap: 4px; }
+    .line-text {
+      width: 100%;
+      min-height: 90px;
+      padding: 13px 14px 25px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #121519;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.65;
+      resize: vertical;
+    }
+    .line-text:focus { border-color: var(--cyan); }
+    .char-count { position: absolute; right: 26px; bottom: 22px; color: var(--dim); font-size: 9px; }
+    .add-line { width: 100%; margin-top: 10px; border-style: dashed; color: var(--cyan); }
+
+    .request-note { margin-top: 28px; }
+    .request-note h3 { margin: 0 0 5px; font-size: 16px; }
+    .request-note p { margin: 0 0 12px; color: var(--dim); font-size: 11px; line-height: 1.55; }
+
+    .preview-rail {
+      position: sticky;
+      top: 72px;
+      height: calc(100vh - 72px);
+      padding: 26px 18px;
+      border-left: 1px solid var(--line);
+      background: rgba(12,14,17,.4);
+      overflow: auto;
+    }
+    .preview-head { margin-bottom: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .preview-head b { font-size: 12px; }
+    .save-status { color: var(--green); font-size: 9px; }
+    .save-status.dirty { color: var(--amber); }
+    .preview-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #111419;
+      box-shadow: var(--shadow);
+    }
+    .preview-scene {
+      min-height: 145px;
+      padding: 18px;
+      background:
+        linear-gradient(0deg, rgba(10,12,15,.8), rgba(10,12,15,.1)),
+        var(--lesson-image, linear-gradient(135deg,#292e35,#13161a)) center / cover;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .preview-scene span { color: var(--amber); font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+    .preview-scene h3 { margin: 5px 0 0; font-size: 20px; line-height: 1.2; text-shadow: 0 2px 18px #000; }
+    .preview-lines { padding: 12px; display: grid; gap: 8px; }
+    .preview-line { padding: 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+    .preview-speaker { display: flex; align-items: center; gap: 7px; }
+    .preview-avatar { width: 22px; height: 22px; border-radius: 7px; background: var(--surface-3); display: grid; place-items: center; font-size: 9px; font-weight: 900; }
+    .preview-line[data-speaker="ZERO"] .preview-avatar { background: #4a2030; color: #ffb0c5; }
+    .preview-line[data-speaker="플레이어"] .preview-avatar { background: #193b40; color: #a8f5f5; }
+    .preview-line[data-speaker="모아"] .preview-avatar { background: #46321b; color: #ffd39e; }
+    .preview-speaker b { font-size: 10px; }
+    .preview-speaker small { margin-left: auto; color: var(--dim); font-size: 8px; }
+    .preview-line p { margin: 8px 0 0; color: #d7d9da; font-size: 11px; line-height: 1.6; word-break: keep-all; }
+    .preview-empty { padding: 24px 12px; color: var(--dim); text-align: center; font-size: 11px; }
+
+    .format-guide { margin-top: 17px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+    .format-guide summary { cursor: pointer; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .format-guide p, .format-guide li { color: var(--dim); font-size: 10px; line-height: 1.6; }
+    .format-guide ol { padding-left: 18px; }
+
+    .toast {
+      position: fixed;
+      z-index: 100;
+      left: 50%;
+      bottom: 24px;
+      max-width: min(520px, calc(100% - 30px));
+      padding: 12px 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      background: #262b31;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+    }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .drop-mask {
+      position: fixed;
+      z-index: 90;
+      inset: 14px;
+      border: 2px dashed var(--cyan);
+      border-radius: 22px;
+      background: rgba(13, 34, 38, .9);
+      color: #b7f8fb;
+      display: none;
+      place-items: center;
+      font-size: 20px;
+      font-weight: 850;
+      pointer-events: none;
+    }
+    body.dragging .drop-mask { display: grid; }
+
+    @media (max-width: 1180px) {
+      .workspace { grid-template-columns: 210px minmax(500px, 1fr); }
+      .preview-rail { position: static; grid-column: 2; height: auto; border-left: 0; border-top: 1px solid var(--line); }
+      .preview-card { max-width: 680px; }
+    }
+    @media (max-width: 800px) {
+      .topbar { position: relative; align-items: flex-start; flex-direction: column; }
+      .top-actions { width: 100%; justify-content: flex-start; }
+      .workspace { display: block; }
+      .lesson-rail { position: static; height: auto; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .lesson-list { display: flex; overflow-x: auto; padding-bottom: 5px; }
+      .lesson-button { flex: 0 0 205px; }
+      .rail-summary { display: flex; gap: 16px; }
+      .rail-summary div + div { margin-top: 0; }
+      .editor-main { padding-top: 24px; }
+      .preview-rail { padding: 22px 16px 70px; }
+    }
+    @media (max-width: 580px) {
+      .top-actions .button { flex: 1 1 auto; }
+      .lesson-fields, .scene-fields { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .scene-tabs { grid-template-columns: 1fr 1fr; }
+      .line-card-head { grid-template-columns: 34px 1fr; }
+      .line-tools { grid-column: 2; }
+      .scene-section-head { align-items: flex-start; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">0</div>
+      <div>
+        <span>BEFORE THE RECORD · WRITER TOOL</span>
+        <h1>0호 수장고 대본 편집실</h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a class="button ghost" href="index.html">콘텐츠 보기</a>
+      <button class="button ghost" type="button" id="resetButton">원본으로 되돌리기</button>
+      <button class="button" type="button" id="importButton">JSON 불러오기</button>
+      <button class="button" type="button" id="copyButton">JSON 복사</button>
+      <button class="button primary" type="button" id="exportButton">JSON 저장</button>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="lesson-rail">
+      <span class="rail-label">6개 차시</span>
+      <nav class="lesson-list" id="lessonList" aria-label="차시 선택"></nav>
+      <div class="rail-summary">
+        <div><span>장면</span><b id="sceneTotal">24</b></div>
+        <div><span>전체 대사</span><b id="lineTotal">0</b></div>
+        <div><span>빈 대사</span><b id="emptyTotal">0</b></div>
+      </div>
+    </aside>
+
+    <main class="editor-main">
+      <div class="editor-heading">
+        <span class="lesson-kicker" id="lessonKicker">LESSON 01</span>
+        <h2 id="lessonHeading">대본을 불러오는 중입니다</h2>
+        <p>입력 내용은 이 브라우저에 자동 임시 저장됩니다. 작업이 끝나면 상단의 <b>JSON 저장</b>을 눌러 파일을 내려받으세요.</p>
+      </div>
+
+      <section class="lesson-fields" aria-label="차시 기본 정보">
+        <label class="field">
+          <span class="field-label">차시 제목</span>
+          <input id="lessonTitle" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field-label">차시 부제</span>
+          <input id="lessonSubtitle" autocomplete="off">
+        </label>
+        <label class="field full">
+          <span class="field-label">이 차시 수정 메모</span>
+          <textarea id="lessonNote" placeholder="예: ZERO가 너무 빨리 설득되므로 갈등을 더 길게 끌어 주세요."></textarea>
+        </label>
+      </section>
+
+      <div class="scene-tabs" id="sceneTabs" role="tablist" aria-label="장면 선택"></div>
+
+      <section class="scene-fields" id="sceneFields" aria-label="장면 정보">
+        <label class="field">
+          <span class="field-label">장면 단계</span>
+          <input id="sceneStage" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field-label">장면 제목</span>
+          <input id="sceneTitle" autocomplete="off">
+        </label>
+        <label class="field full">
+          <span class="field-label">장면 부제</span>
+          <input id="sceneSubtitle" autocomplete="off">
+        </label>
+      </section>
+
+      <div class="scene-section-head">
+        <div>
+          <h3 id="sceneHeading">대사</h3>
+          <p>화자·역할·대사를 고치고 화살표로 순서를 바꿀 수 있습니다.</p>
+        </div>
+        <button class="button small" type="button" id="addLineTop">＋ 대사 추가</button>
+      </div>
+      <div class="dialogue-list" id="dialogueList"></div>
+      <button class="button add-line" type="button" id="addLineBottom">＋ 이 장면 끝에 대사 추가</button>
+
+      <section class="request-note">
+        <h3>전체 편집 요청 메모</h3>
+        <p>이 메모도 JSON에 포함됩니다. 파일을 전달할 때 원하는 수정 방향이나 건드리지 말아야 할 부분을 적어 주세요.</p>
+        <label class="field">
+          <span class="field-label">편집자 메모</span>
+          <textarea id="projectNote" placeholder="예: 전체적으로 학생이 선택한 답에 ZERO가 한마디씩 반응하도록 수정. 사실 정보와 문제 문항은 유지."></textarea>
+        </label>
+      </section>
+    </main>
+
+    <aside class="preview-rail">
+      <div class="preview-head">
+        <div>
+          <span class="preview-label">LIVE PREVIEW</span>
+          <b>현재 장면 미리보기</b>
+        </div>
+        <span class="save-status" id="saveStatus">임시 저장됨</span>
+      </div>
+      <div class="preview-card">
+        <div class="preview-scene" id="previewScene">
+          <span id="previewStage">SCENE</span>
+          <h3 id="previewTitle">장면 제목</h3>
+        </div>
+        <div class="preview-lines" id="previewLines"></div>
+      </div>
+      <details class="format-guide">
+        <summary>JSON 전달 방법</summary>
+        <ol>
+          <li>모든 차시의 대본을 자유롭게 수정합니다.</li>
+          <li><b>JSON 저장</b>으로 파일을 내려받습니다.</li>
+          <li>저장된 JSON을 채팅에 첨부하고 “이대로 반영해 줘”라고 말하면 됩니다.</li>
+        </ol>
+        <p>JSON에는 이미지나 문제 정답이 들어가지 않고, 대본과 편집 메모만 들어갑니다.</p>
+      </details>
+    </aside>
+  </div>
+
+  <div class="drop-mask">JSON 파일을 놓아 주세요</div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <datalist id="speakerOptions">
+    <option value="모아"></option>
+    <option value="ZERO"></option>
+    <option value="플레이어"></option>
+  </datalist>
+
+  <script src="story.js"></script>
+  <script src="question-bank.js"></script>
+  <script src="script-revision.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var SCHEMA = 'before-the-record-script-v1';
+      var STORAGE_KEY = 'commonsenses.before-the-record.script-editor.v2';
+      var SCENES = [
+        { key: 'opening', no: '01', label: '도입 사건' },
+        { key: 'artifact', no: '02', label: '유물 관찰 뒤' },
+        { key: 'reconstruction', no: '03', label: '생활 복원 뒤' },
+        { key: 'crisis', no: '04', label: '위기 장면' }
+      ];
+      var sourceStory = window.BEFORE_RECORD_STORY || [];
+      var draft = loadDraft() || buildPayload(sourceStory);
+      var activeLessonIndex = 0;
+      var activeSceneKey = 'opening';
+      var dirty = false;
+      var toastTimer = null;
+
+      var els = {
+        lessonList: document.getElementById('lessonList'),
+        sceneTabs: document.getElementById('sceneTabs'),
+        dialogueList: document.getElementById('dialogueList'),
+        lessonKicker: document.getElementById('lessonKicker'),
+        lessonHeading: document.getElementById('lessonHeading'),
+        lessonTitle: document.getElementById('lessonTitle'),
+        lessonSubtitle: document.getElementById('lessonSubtitle'),
+        lessonNote: document.getElementById('lessonNote'),
+        sceneFields: document.getElementById('sceneFields'),
+        sceneStage: document.getElementById('sceneStage'),
+        sceneTitle: document.getElementById('sceneTitle'),
+        sceneSubtitle: document.getElementById('sceneSubtitle'),
+        sceneHeading: document.getElementById('sceneHeading'),
+        projectNote: document.getElementById('projectNote'),
+        previewScene: document.getElementById('previewScene'),
+        previewStage: document.getElementById('previewStage'),
+        previewTitle: document.getElementById('previewTitle'),
+        previewLines: document.getElementById('previewLines'),
+        saveStatus: document.getElementById('saveStatus'),
+        sceneTotal: document.getElementById('sceneTotal'),
+        lineTotal: document.getElementById('lineTotal'),
+        emptyTotal: document.getElementById('emptyTotal'),
+        fileInput: document.getElementById('fileInput'),
+        toast: document.getElementById('toast')
+      };
+
+      if (!sourceStory.length) {
+        showToast('원본 대본을 불러오지 못했습니다. story.js 파일 위치를 확인해 주세요.');
+        return;
+      }
+
+      bindStaticEvents();
+      renderAll();
+
+      function clone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function buildPayload(story) {
+        return {
+          schema: SCHEMA,
+          project: 'before-the-record',
+          editorNote: '',
+          exportedAt: null,
+          lessons: story.map(function (lesson) {
+            var beats = lesson.storyBeats || {};
+            var scenes = {
+              opening: {
+                stage: '사건 도입',
+                title: lesson.title,
+                subtitle: lesson.subtitle,
+                lines: clone(lesson.story || [])
+              }
+            };
+            SCENES.slice(1).forEach(function (scene) {
+              var beat = beats[scene.key] || {};
+              scenes[scene.key] = {
+                stage: beat.stage || '',
+                title: beat.title || '',
+                subtitle: beat.subtitle || '',
+                lines: clone(beat.lines || [])
+              };
+            });
+            return {
+              id: lesson.id,
+              no: lesson.no,
+              era: lesson.era,
+              title: lesson.title,
+              subtitle: lesson.subtitle,
+              hero: lesson.hero,
+              note: '',
+              scenes: scenes
+            };
+          })
+        };
+      }
+
+      function normalizePayload(input) {
+        if (!input || input.schema !== SCHEMA || !Array.isArray(input.lessons)) {
+          throw new Error('이 편집기에서 저장한 JSON 형식이 아닙니다.');
+        }
+        var sourceById = {};
+        sourceStory.forEach(function (lesson) { sourceById[lesson.id] = lesson; });
+        if (input.lessons.length !== sourceStory.length) {
+          throw new Error('차시 수가 맞지 않습니다. 현재 콘텐츠는 ' + sourceStory.length + '개 차시입니다.');
+        }
+        var normalized = buildPayload(sourceStory);
+        normalized.editorNote = typeof input.editorNote === 'string' ? input.editorNote : '';
+        normalized.lessons = input.lessons.map(function (lesson, index) {
+          var source = sourceById[lesson.id];
+          if (!source) throw new Error((index + 1) + '번째 차시 ID를 찾을 수 없습니다.');
+          var output = {
+            id: source.id,
+            no: source.no,
+            era: source.era,
+            title: cleanString(lesson.title, source.title),
+            subtitle: cleanString(lesson.subtitle, source.subtitle),
+            hero: source.hero,
+            note: typeof lesson.note === 'string' ? lesson.note : '',
+            scenes: {}
+          };
+          SCENES.forEach(function (scene) {
+            var fallback = normalized.lessons[source.no - 1].scenes[scene.key];
+            var incoming = lesson.scenes && lesson.scenes[scene.key];
+            if (!incoming || !Array.isArray(incoming.lines)) {
+              throw new Error(source.no + '차시의 ' + scene.label + ' 대사가 없습니다.');
+            }
+            output.scenes[scene.key] = {
+              stage: cleanString(incoming.stage, fallback.stage),
+              title: cleanString(incoming.title, fallback.title),
+              subtitle: cleanString(incoming.subtitle, fallback.subtitle),
+              lines: incoming.lines.map(function (line) {
+                return {
+                  speaker: cleanString(line.speaker, '플레이어'),
+                  role: typeof line.role === 'string' ? line.role : '',
+                  text: typeof line.text === 'string' ? line.text : ''
+                };
+              })
+            };
+          });
+          return output;
+        });
+        return normalized;
+      }
+
+      function cleanString(value, fallback) {
+        return typeof value === 'string' ? value : fallback;
+      }
+
+      function loadDraft() {
+        try {
+          var saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? normalizePayload(JSON.parse(saved)) : null;
+        } catch (error) {
+          localStorage.removeItem(STORAGE_KEY);
+          return null;
+        }
+      }
+
+      function persist() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+          els.saveStatus.textContent = '임시 저장됨';
+          els.saveStatus.classList.remove('dirty');
+        } catch (error) {
+          els.saveStatus.textContent = '저장 실패';
+          els.saveStatus.classList.add('dirty');
+        }
+      }
+
+      function markChanged() {
+        dirty = true;
+        els.saveStatus.textContent = '수정 중…';
+        els.saveStatus.classList.add('dirty');
+        window.clearTimeout(markChanged.timer);
+        markChanged.timer = window.setTimeout(persist, 240);
+        renderStats();
+      }
+
+      function currentLesson() { return draft.lessons[activeLessonIndex]; }
+      function currentScene() { return currentLesson().scenes[activeSceneKey]; }
+      function sceneMeta(key) { return SCENES.filter(function (scene) { return scene.key === key; })[0]; }
+
+      function renderAll() {
+        renderLessonNav();
+        renderSceneTabs();
+        renderEditor();
+        renderStats();
+      }
+
+      function renderLessonNav() {
+        els.lessonList.innerHTML = '';
+        draft.lessons.forEach(function (lesson, index) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'lesson-button' + (index === activeLessonIndex ? ' active' : '');
+          button.setAttribute('aria-current', index === activeLessonIndex ? 'page' : 'false');
+          var number = document.createElement('span');
+          number.className = 'lesson-no';
+          number.textContent = String(lesson.no).padStart(2, '0');
+          var copy = document.createElement('span');
+          var title = document.createElement('b');
+          title.textContent = lesson.title;
+          var meta = document.createElement('small');
+          meta.textContent = countLessonLines(lesson) + '개 대사 · ' + lesson.era;
+          copy.appendChild(title);
+          copy.appendChild(meta);
+          button.appendChild(number);
+          button.appendChild(copy);
+          button.addEventListener('click', function () {
+            activeLessonIndex = index;
+            renderAll();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+          els.lessonList.appendChild(button);
+        });
+      }
+
+      function renderSceneTabs() {
+        els.sceneTabs.innerHTML = '';
+        SCENES.forEach(function (scene) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.role = 'tab';
+          button.className = 'scene-tab' + (scene.key === activeSceneKey ? ' active' : '');
+          button.setAttribute('aria-selected', scene.key === activeSceneKey ? 'true' : 'false');
+          var no = document.createElement('span');
+          no.textContent = 'SCENE ' + scene.no;
+          var label = document.createElement('b');
+          label.textContent = scene.label;
+          button.appendChild(no);
+          button.appendChild(label);
+          button.addEventListener('click', function () {
+            activeSceneKey = scene.key;
+            renderSceneTabs();
+            renderEditor();
+          });
+          els.sceneTabs.appendChild(button);
+        });
+      }
+
+      function renderEditor() {
+        var lesson = currentLesson();
+        var scene = currentScene();
+        var meta = sceneMeta(activeSceneKey);
+        els.lessonKicker.textContent = 'LESSON ' + String(lesson.no).padStart(2, '0') + ' · ' + lesson.era;
+        els.lessonHeading.textContent = lesson.title;
+        els.lessonTitle.value = lesson.title;
+        els.lessonSubtitle.value = lesson.subtitle;
+        els.lessonNote.value = lesson.note;
+        els.projectNote.value = draft.editorNote || '';
+        els.sceneStage.value = scene.stage;
+        els.sceneTitle.value = scene.title;
+        els.sceneSubtitle.value = scene.subtitle;
+        els.sceneFields.hidden = activeSceneKey === 'opening';
+        els.sceneHeading.textContent = meta.label + ' 대사 · ' + scene.lines.length + '줄';
+        renderDialogueLines();
+        renderPreview();
+      }
+
+      function renderDialogueLines() {
+        var lines = currentScene().lines;
+        els.dialogueList.innerHTML = '';
+        lines.forEach(function (line, index) {
+          var card = document.createElement('article');
+          card.className = 'line-card ' + speakerClass(line.speaker);
+          card.dataset.index = index;
+
+          var head = document.createElement('div');
+          head.className = 'line-card-head';
+          var number = document.createElement('span');
+          number.className = 'line-number';
+          number.textContent = String(index + 1).padStart(2, '0');
+          head.appendChild(number);
+          head.appendChild(compactField('화자', line.speaker, 'speaker', index, true));
+          head.appendChild(compactField('역할', line.role, 'role', index, false));
+
+          var tools = document.createElement('div');
+          tools.className = 'line-tools';
+          tools.appendChild(toolButton('↑', '위로 이동', function () { moveLine(index, -1); }, index === 0));
+          tools.appendChild(toolButton('↓', '아래로 이동', function () { moveLine(index, 1); }, index === lines.length - 1));
+          tools.appendChild(toolButton('×', '대사 삭제', function () { removeLine(index); }, false, true));
+          head.appendChild(tools);
+          card.appendChild(head);
+
+          var textarea = document.createElement('textarea');
+          textarea.className = 'line-text';
+          textarea.value = line.text;
+          textarea.setAttribute('aria-label', (index + 1) + '번 대사');
+          textarea.addEventListener('input', function () {
+            line.text = textarea.value;
+            count.textContent = textarea.value.length + '자';
+            renderPreview();
+            markChanged();
+          });
+          card.appendChild(textarea);
+          var count = document.createElement('span');
+          count.className = 'char-count';
+          count.textContent = line.text.length + '자';
+          card.appendChild(count);
+          els.dialogueList.appendChild(card);
+        });
+      }
+
+      function compactField(label, value, key, index, hasList) {
+        var wrapper = document.createElement('label');
+        wrapper.className = 'compact-input';
+        var title = document.createElement('span');
+        title.textContent = label;
+        var input = document.createElement('input');
+        input.value = value;
+        input.autocomplete = 'off';
+        if (hasList) input.setAttribute('list', 'speakerOptions');
+        input.addEventListener('input', function () {
+          currentScene().lines[index][key] = input.value;
+          if (key === 'speaker') {
+            var card = input.closest('.line-card');
+            card.className = 'line-card ' + speakerClass(input.value);
+          }
+          renderPreview();
+          markChanged();
+        });
+        wrapper.appendChild(title);
+        wrapper.appendChild(input);
+        return wrapper;
+      }
+
+      function toolButton(text, label, action, disabled, danger) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'button icon' + (danger ? ' danger' : '');
+        button.textContent = text;
+        button.title = label;
+        button.setAttribute('aria-label', label);
+        button.disabled = disabled;
+        button.addEventListener('click', action);
+        return button;
+      }
+
+      function speakerClass(speaker) {
+        if (speaker === 'ZERO') return 'zero';
+        if (speaker === '플레이어') return 'player';
+        if (speaker === '모아') return 'moa';
+        return '';
+      }
+
+      function renderPreview() {
+        var lesson = currentLesson();
+        var scene = currentScene();
+        els.previewScene.style.setProperty('--lesson-image', 'linear-gradient(0deg, rgba(10,12,15,.64), rgba(10,12,15,.12)), url("' + lesson.hero + '")');
+        els.previewStage.textContent = scene.stage || sceneMeta(activeSceneKey).label;
+        els.previewTitle.textContent = scene.title || lesson.title;
+        els.previewLines.innerHTML = '';
+        if (!scene.lines.length) {
+          var empty = document.createElement('div');
+          empty.className = 'preview-empty';
+          empty.textContent = '이 장면에 대사가 없습니다.';
+          els.previewLines.appendChild(empty);
+          return;
+        }
+        scene.lines.forEach(function (line) {
+          var item = document.createElement('div');
+          item.className = 'preview-line';
+          item.dataset.speaker = line.speaker;
+          var who = document.createElement('div');
+          who.className = 'preview-speaker';
+          var avatar = document.createElement('span');
+          avatar.className = 'preview-avatar';
+          avatar.textContent = line.speaker === 'ZERO' ? '0' : line.speaker.charAt(0) || '?';
+          var name = document.createElement('b');
+          name.textContent = line.speaker || '화자 없음';
+          var role = document.createElement('small');
+          role.textContent = line.role;
+          who.appendChild(avatar);
+          who.appendChild(name);
+          who.appendChild(role);
+          var text = document.createElement('p');
+          text.textContent = line.text || '(빈 대사)';
+          item.appendChild(who);
+          item.appendChild(text);
+          els.previewLines.appendChild(item);
+        });
+      }
+
+      function renderStats() {
+        var lineCount = 0;
+        var emptyCount = 0;
+        draft.lessons.forEach(function (lesson) {
+          SCENES.forEach(function (scene) {
+            lesson.scenes[scene.key].lines.forEach(function (line) {
+              lineCount += 1;
+              if (!line.text.trim()) emptyCount += 1;
+            });
+          });
+        });
+        els.sceneTotal.textContent = draft.lessons.length * SCENES.length;
+        els.lineTotal.textContent = lineCount;
+        els.emptyTotal.textContent = emptyCount;
+      }
+
+      function countLessonLines(lesson) {
+        return SCENES.reduce(function (total, scene) {
+          return total + lesson.scenes[scene.key].lines.length;
+        }, 0);
+      }
+
+      function moveLine(index, direction) {
+        var lines = currentScene().lines;
+        var target = index + direction;
+        if (target < 0 || target >= lines.length) return;
+        var line = lines.splice(index, 1)[0];
+        lines.splice(target, 0, line);
+        markChanged();
+        renderDialogueLines();
+        renderPreview();
+      }
+
+      function removeLine(index) {
+        currentScene().lines.splice(index, 1);
+        markChanged();
+        renderEditor();
+      }
+
+      function addLine() {
+        currentScene().lines.push({
+          speaker: '플레이어',
+          role: '어린이 수습 학예사',
+          text: ''
+        });
+        markChanged();
+        renderEditor();
+        var cards = els.dialogueList.querySelectorAll('.line-card');
+        var last = cards[cards.length - 1];
+        if (last) {
+          last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          last.querySelector('.line-text').focus();
+        }
+      }
+
+      function bindStaticEvents() {
+        els.lessonTitle.addEventListener('input', function () {
+          currentLesson().title = els.lessonTitle.value;
+          currentLesson().scenes.opening.title = els.lessonTitle.value;
+          els.lessonHeading.textContent = els.lessonTitle.value;
+          renderLessonNav();
+          renderPreview();
+          markChanged();
+        });
+        els.lessonSubtitle.addEventListener('input', function () {
+          currentLesson().subtitle = els.lessonSubtitle.value;
+          currentLesson().scenes.opening.subtitle = els.lessonSubtitle.value;
+          markChanged();
+        });
+        els.lessonNote.addEventListener('input', function () {
+          currentLesson().note = els.lessonNote.value;
+          markChanged();
+        });
+        els.projectNote.addEventListener('input', function () {
+          draft.editorNote = els.projectNote.value;
+          markChanged();
+        });
+        [['sceneStage', 'stage'], ['sceneTitle', 'title'], ['sceneSubtitle', 'subtitle']].forEach(function (pair) {
+          els[pair[0]].addEventListener('input', function () {
+            currentScene()[pair[1]] = els[pair[0]].value;
+            renderPreview();
+            markChanged();
+          });
+        });
+        document.getElementById('addLineTop').addEventListener('click', addLine);
+        document.getElementById('addLineBottom').addEventListener('click', addLine);
+        document.getElementById('importButton').addEventListener('click', function () { els.fileInput.click(); });
+        document.getElementById('copyButton').addEventListener('click', copyJson);
+        document.getElementById('exportButton').addEventListener('click', exportJson);
+        document.getElementById('resetButton').addEventListener('click', resetDraft);
+        els.fileInput.addEventListener('change', function () {
+          if (els.fileInput.files[0]) readJsonFile(els.fileInput.files[0]);
+          els.fileInput.value = '';
+        });
+        window.addEventListener('beforeunload', function (event) {
+          if (!dirty) return;
+          event.preventDefault();
+          event.returnValue = '';
+        });
+        document.addEventListener('dragenter', dragOn);
+        document.addEventListener('dragover', dragOn);
+        document.addEventListener('dragleave', function (event) {
+          if (!event.relatedTarget) document.body.classList.remove('dragging');
+        });
+        document.addEventListener('drop', function (event) {
+          event.preventDefault();
+          document.body.classList.remove('dragging');
+          var file = event.dataTransfer.files && event.dataTransfer.files[0];
+          if (file) readJsonFile(file);
+        });
+      }
+
+      function dragOn(event) {
+        event.preventDefault();
+        document.body.classList.add('dragging');
+      }
+
+      function validationErrors() {
+        var errors = [];
+        draft.lessons.forEach(function (lesson) {
+          if (!lesson.title.trim()) errors.push(lesson.no + '차시 제목이 비어 있습니다.');
+          SCENES.forEach(function (sceneMetaItem) {
+            var scene = lesson.scenes[sceneMetaItem.key];
+            if (!scene.lines.length) errors.push(lesson.no + '차시 ' + sceneMetaItem.label + '에 대사가 없습니다.');
+            scene.lines.forEach(function (line, index) {
+              if (!line.speaker.trim()) errors.push(lesson.no + '차시 ' + sceneMetaItem.label + ' ' + (index + 1) + '번 화자가 비어 있습니다.');
+              if (!line.text.trim()) errors.push(lesson.no + '차시 ' + sceneMetaItem.label + ' ' + (index + 1) + '번 대사가 비어 있습니다.');
+            });
+          });
+        });
+        return errors;
+      }
+
+      function jsonText() {
+        var output = clone(draft);
+        output.exportedAt = new Date().toISOString();
+        return JSON.stringify(output, null, 2);
+      }
+
+      function exportJson() {
+        var errors = validationErrors();
+        if (errors.length && !window.confirm('빈 항목이 ' + errors.length + '개 있습니다. 그래도 JSON을 저장할까요?')) return;
+        var blob = new Blob([jsonText()], { type: 'application/json;charset=utf-8' });
+        var href = URL.createObjectURL(blob);
+        var anchor = document.createElement('a');
+        var date = new Date().toISOString().slice(0, 10);
+        anchor.href = href;
+        anchor.download = 'before-the-record-script-' + date + '.json';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(href);
+        dirty = false;
+        persist();
+        showToast('JSON 파일을 저장했습니다. 이 파일을 채팅에 첨부해 주세요.');
+      }
+
+      function copyJson() {
+        var text = jsonText();
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(function () {
+            showToast('JSON 전체를 클립보드에 복사했습니다.');
+          }).catch(function () { fallbackCopy(text); });
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        var copied = document.execCommand('copy');
+        textarea.remove();
+        showToast(copied ? 'JSON 전체를 클립보드에 복사했습니다.' : '복사하지 못했습니다. JSON 저장을 이용해 주세요.');
+      }
+
+      function readJsonFile(file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            draft = normalizePayload(JSON.parse(reader.result));
+            activeLessonIndex = 0;
+            activeSceneKey = 'opening';
+            dirty = true;
+            persist();
+            renderAll();
+            showToast('JSON 대본을 불러왔습니다.');
+          } catch (error) {
+            showToast('불러오기 실패: ' + error.message);
+          }
+        };
+        reader.onerror = function () { showToast('파일을 읽지 못했습니다.'); };
+        reader.readAsText(file, 'utf-8');
+      }
+
+      function resetDraft() {
+        if (!window.confirm('현재 편집 내용을 모두 지우고 웹콘텐츠의 원본 대본으로 되돌릴까요?')) return;
+        draft = buildPayload(sourceStory);
+        activeLessonIndex = 0;
+        activeSceneKey = 'opening';
+        dirty = false;
+        persist();
+        renderAll();
+        showToast('원본 대본으로 되돌렸습니다.');
+      }
+
+      function showToast(message) {
+        window.clearTimeout(toastTimer);
+        els.toast.textContent = message;
+        els.toast.classList.add('show');
+        toastTimer = window.setTimeout(function () { els.toast.classList.remove('show'); }, 2600);
+      }
+    })();
+  </script>
+</body>
+</html>
