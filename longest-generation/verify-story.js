@@ -214,6 +214,7 @@ assert(expansionSource.includes('Bonus question is missing an explicit story anc
 assert(expansionSource.includes('function uniqueAnchorIndex(') && expansionSource.includes("matches.length!==1)throw new Error"), 'story anchors can silently use a missing or duplicate match');
 assert(appSource.includes("chapter.decision.afterBeat&&!decisionMarker)throw new Error"), 'an unresolved decision anchor can silently fall back before the first question');
 const reviewSource = fs.readFileSync(path.join(root, 'story-review.html'), 'utf8');
+assert(reviewSource.includes('대사/서술 294개 · 전환 13개'), 'review header reports stale narrative counts');
 assert(reviewSource.includes('실제 플레이 순서 · 도입부터 결과까지'), 'review screen no longer labels the actual play order');
 assert(reviewSource.includes('장면 전환 · 인생 선택'), 'review screen no longer displays anchored decisions at their story transition');
 assert(!reviewSource.includes("heading((chapter.decision?'3':'2')+' · 설전과 문제')"), 'review screen still groups every quiz separately from the story');
