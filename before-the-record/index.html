@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>0호 수장고: 기록 이전 · BEFORE THE RECORD</title>
+  <meta name="description" content="실제 유물과 유적을 관찰하고 생활 모습을 추론하며 구석기 시대부터 고조선까지 배우는 6차시 초등 사회 학습 스토리.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:title" content="0호 수장고: 기록 이전">
+  <meta property="og:description" content="문자 기록만 믿는 AI ZERO에게 유물과 유적으로 역사를 증명하라.">
+  <meta property="og:url" content="https://9ood2s.github.io/CommonSenses/before-the-record/">
+  <meta property="og:image" content="https://9ood2s.github.io/CommonSenses/before-the-record/assets/reconstructions/bangudae-coastal-life.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="preload" as="image" href="assets/reconstructions/paleolithic-mobile-camp.png">
+  <link rel="preload" as="image" href="assets/artifacts/handaxe.jpg">
+  <link rel="stylesheet" href="styles.css?v=20260816-4">
+</head>
+<body>
+<div class="app-shell">
+  <a class="supapad-ci" href="https://supapad.co" target="_blank" rel="noopener" aria-label="supapad 새 창에서 열기">
+    <svg viewBox="0 0 190 48" role="img" aria-hidden="true">
+      <rect x="1" y="3" width="42" height="42" rx="12" fill="#0d9bb0"/>
+      <path d="M11 31 22 15l11 16M16 25h12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="34" cy="13" r="4.2" fill="#dc8a0f"/>
+      <text x="51" y="34" fill="currentColor" font-family="Pretendard Variable, sans-serif" font-size="28"><tspan font-weight="800">supa</tspan><tspan font-weight="400">pad</tspan></text>
+    </svg>
+  </a>
+
+  <header class="topbar" id="topbar" hidden>
+    <button class="topbar-button vault-button" id="vaultButton" type="button" aria-label="수장고 목록">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <div class="topbar-location">
+      <small id="topEra">0호 수장고</small>
+      <b id="topTitle">기록 이전</b>
+    </div>
+    <div class="topbar-phase"><span id="phaseNo">01</span><b id="phaseLabel">사건</b></div>
+    <div class="topbar-score"><span>학예사 평판</span><b id="reputationCount">50</b></div>
+    <button class="topbar-button memory-button" id="memoryButton" type="button"><span>기억 보관함</span><b id="memoryCount">0</b><i id="memoryTotal">/ 60</i></button>
+  </header>
+
+  <main>
+    <section class="screen title-screen" id="titleScreen">
+      <div class="title-grid" aria-hidden="true"></div>
+      <div class="title-copy">
+        <p class="eyebrow">COMMONSENSES 04 · PREHISTORY—GOJOSEON</p>
+        <h1><span>0호</span><br>수장고</h1>
+        <p class="title-en">BEFORE THE RECORD</p>
+        <p class="logline">기록이 없다는 것은<br>역사가 없다는 뜻일까?</p>
+        <div class="title-actions">
+          <button class="primary" id="startButton" type="button">0호 수장고 열기</button>
+          <button class="secondary" id="continueButton" type="button" hidden>조사 이어하기</button>
+          <button class="text-button" id="titleSourcesButton" type="button">실제 자료·재구성 이미지 안내</button>
+        </div>
+      </div>
+
+      <div class="title-vault">
+        <div class="title-character-zero" aria-label="능글맞은 박물관 기록 관리 AI ZERO">
+          <img src="assets/characters/zero-archive-ai.png" alt="기록 카드와 오류 표시를 띄우며 손가락질하는 밈풍 기록 관리 AI ZERO" width="1024" height="1536">
+          <span>문자 기록 없으면 삭제각인데요, 휴먼?</span>
+        </div>
+        <img class="title-character-player" src="assets/characters/player-curator.png" alt="유물 스캐너를 들고 ZERO에게 맞서는 어린이 수습 학예사" width="1024" height="1536">
+        <figure class="title-artifact artifact-one">
+          <img src="assets/artifacts/handaxe.jpg" alt="" width="2253" height="3000">
+          <figcaption>주먹도끼 <b>실제 유물</b></figcaption>
+        </figure>
+        <figure class="title-artifact artifact-two">
+          <img src="assets/artifacts/comb-pattern-pottery.jpg" alt="" width="2252" height="3000">
+          <figcaption>빗살무늬토기 <b>실제 유물</b></figcaption>
+        </figure>
+        <figure class="title-artifact artifact-three">
+          <img src="assets/artifacts/lute-shaped-bronze-dagger.jpg" alt="" width="2253" height="3000">
+          <figcaption>비파형 동검 <b>실제 유물</b></figcaption>
+        </figure>
+        <div class="delete-stamp"><span>DELETE?</span><b>문자 기록 없음</b></div>
+      </div>
+
+      <div class="title-mission">
+        <span>MISSION</span>
+        <p>실제 유물과 유적을 관찰하고, 근거 있는 추론으로 여섯 개의 전시를 복구하세요.</p>
+      </div>
+    </section>
+
+    <section class="screen vault-screen" id="vaultScreen" hidden>
+      <div class="section-head">
+        <div><p class="eyebrow">VAULT 0 · SIX LOCKS</p><h2>봉인된 전시</h2></div>
+        <p>완료한 전시는 다시 조사할 수 있습니다. 설전에서 패배하면 다음 전시는 열리지 않습니다.</p>
+      </div>
+      <div class="vault-progress" aria-label="전시 복구 진행률">
+        <div><span>복구율</span><b id="vaultProgressLabel">0 / 6</b></div>
+        <div class="progress-track"><i id="vaultProgressBar"></i></div>
+      </div>
+      <div class="lesson-list" id="lessonList"></div>
+      <div class="screen-actions split-actions">
+        <button class="secondary" id="vaultHomeButton" type="button">표지로</button>
+        <button class="secondary" id="vaultMemoryButton" type="button">기억 보관함</button>
+        <button class="primary" id="vaultContinueButton" type="button">현재 조사 계속</button>
+      </div>
+    </section>
+
+    <section class="screen story-screen" id="storyScreen" hidden>
+      <div class="episode-head">
+        <p><span id="storyEra">주제 도입</span> · LOCK <b id="storyNo">01</b></p>
+        <h2 id="storyTitle">전곡리에서 발견된 이상한 돌</h2>
+        <small id="storySubtitle"></small>
+      </div>
+      <div class="story-stage">
+        <figure class="story-visual">
+          <img id="storyImage" src="assets/reconstructions/paleolithic-mobile-camp.png" alt="" width="1672" height="941">
+          <figcaption><b>생활 모습 재구성 이미지</b><span>생성형 이미지 · 실제 사진 아님</span></figcaption>
+        </figure>
+        <article class="dialogue-panel">
+          <div class="speaker-visual" id="speakerVisual" data-speaker="모아" aria-hidden="true">
+            <div class="moa-avatar"><i></i><b>M</b></div>
+            <div class="zero-avatar"><img src="assets/characters/zero-archive-ai.png" alt=""></div>
+            <div class="player-avatar"><img src="assets/characters/player-curator.png" alt=""></div>
+          </div>
+          <div class="speaker-meta"><b id="speakerName">모아</b><span id="speakerRole">유물 스캐너</span></div>
+          <p class="dialogue-text" id="dialogueText"></p>
+          <div class="dialogue-step"><span id="dialogueStep">1 / 4</span><i><b id="dialogueProgress"></b></i></div>
+          <button class="primary next-button" id="storyNextButton" type="button">계속</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="screen artifact-screen" id="artifactScreen" hidden>
+      <div class="section-head compact-head">
+        <div><p class="eyebrow">EVIDENCE 01 · 직접 관찰</p><h2 id="artifactScreenTitle">실제 유물을 조사하라</h2></div>
+        <p id="artifactPrompt">사진에서 직접 확인할 수 있는 특징을 고르세요.</p>
+      </div>
+      <div class="evidence-layout">
+        <figure class="artifact-viewer">
+          <div class="media-badge real-badge" id="artifactKind">실제 유물</div>
+          <button class="image-zoom-button" id="artifactZoomButton" type="button" aria-label="유물 사진 크게 보기">
+            <img id="artifactImage" src="assets/artifacts/handaxe.jpg" alt="" width="2253" height="3000">
+            <span>＋ 크게 보기</span>
+          </button>
+          <figcaption>
+            <div><b id="artifactName">주먹도끼</b><p id="artifactMeta"></p></div>
+            <a id="artifactSource" href="#" target="_blank" rel="noopener">소장 기관 원문 ↗</a>
+          </figcaption>
+          <div class="artifact-gallery" id="artifactGallery" hidden>
+            <button id="artifactPrevButton" type="button" aria-label="이전 실제 자료">←</button>
+            <span><b id="artifactIndex">1</b> / <i id="artifactTotal">1</i></span>
+            <button id="artifactNextButton" type="button" aria-label="다음 실제 자료">→</button>
+          </div>
+        </figure>
+
+        <aside class="observation-panel">
+          <div class="observation-status"><span>관찰 카드</span><b><i id="observationCount">0</i> / 3</b></div>
+          <p>눈으로 보이는 사실만 선택하세요. 쓰임과 의미는 다음 단계에서 추론합니다.</p>
+          <div class="observation-list" id="observationList"></div>
+          <div class="selection-message" id="observationMessage" aria-live="polite">아직 관찰을 시작하지 않았습니다.</div>
+          <button class="primary" id="artifactContinueButton" type="button" disabled>생활 장면과 대조하기</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen reconstruction-screen" id="reconstructionScreen" hidden>
+      <div class="section-head compact-head">
+        <div><p class="eyebrow">EVIDENCE 02 · 근거 있는 추론</p><h2>생활 장면을 조사하라</h2></div>
+        <p id="reconstructionPrompt"></p>
+      </div>
+      <div class="reconstruction-layout">
+        <figure class="reconstruction-figure">
+          <div class="media-badge generated-badge">생활 모습 재구성 이미지 · 생성형 이미지</div>
+          <img id="reconstructionImage" src="assets/reconstructions/paleolithic-mobile-camp.png" alt="" width="1672" height="941">
+          <div class="hotspot-layer" id="hotspotLayer"></div>
+          <figcaption id="reconstructionCaption"></figcaption>
+        </figure>
+        <aside class="clue-panel">
+          <div class="observation-status"><span>추론 단서</span><b><i id="clueCount">0</i> / <em id="clueRequired">3</em></b></div>
+          <div class="clue-current" id="clueCurrent">
+            <small>장면의 숫자 표식을 누르세요</small>
+            <b>무엇을 하고 있을까?</b>
+            <p>실제 유물에서 본 특징과 장면 속 행동을 연결해 봅니다.</p>
+          </div>
+          <div class="clue-tags" id="clueTags"></div>
+          <button class="primary" id="reconstructionContinueButton" type="button" disabled>ZERO의 도전 받기</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen duel-screen" id="duelScreen" hidden>
+      <div class="duel-arena">
+        <div class="arena-zero" aria-hidden="true">
+          <div class="zero-glitch-halo"></div>
+          <img src="assets/characters/zero-archive-ai.png" alt="" width="1024" height="1536">
+          <span class="zero-meme-chip" id="zeroMemeChip">판정 중… 아니, 삭제 중 ㅋ</span>
+        </div>
+
+        <article class="duel-intro-panel" id="duelIntroPanel">
+          <p class="eyebrow" id="duelRole">0호 수장고 기록 관리자</p>
+          <h2>증거 판정<br><em>설전</em></h2>
+          <blockquote id="duelQuote"></blockquote>
+          <div class="duel-condition"><b>이번 전시의 해금 조건</b><p id="duelCondition"></p></div>
+          <button class="primary" id="duelBriefingButton" type="button">설전 범위 브리핑</button>
+        </article>
+
+        <article class="briefing-panel" id="briefingPanel" hidden>
+          <p class="eyebrow">BEFORE THE DUEL · 먼저 읽기</p>
+          <h2 id="briefingTitle">근거를 정리하자</h2>
+          <p>사건을 진행하며 해결한 세 차례 판정을 정리합니다. 마지막 두 문제에서 관찰·생활 추론·자료의 한계를 모두 연결하세요.</p>
+          <div class="briefing-list" id="briefingList"></div>
+          <div class="duel-rule"><b>차시 구조</b><span>유물 판정 2문제 → 생활 추론 3문제 → 위기 판단 3문제 → 최종 설전 2문제. 전체 8문제 이상 정답이면 승리합니다.</span></div>
+          <button class="primary" id="quizStartButton" type="button">마지막 2문제 설전 시작</button>
+        </article>
+
+        <article class="quiz-panel" id="quizPanel" hidden>
+          <div class="duel-hud">
+            <div class="hud-side foe-side"><div class="hud-identity"><img src="assets/characters/zero-archive-ai.png" alt=""><span>ZERO 논리 방어선</span></div><div class="hud-bar"><i id="foeBar"></i></div><b id="foeHp">100 / 100</b></div>
+            <em>VS</em>
+            <div class="hud-side player-side"><div class="hud-identity"><img src="assets/characters/player-curator.png" alt=""><span>나의 근거력</span></div><div class="hud-bar"><i id="evidenceBar"></i></div><b id="evidenceHp">100 / 100</b></div>
+          </div>
+          <div class="quiz-meta">
+            <p><span id="questionOrder">근거 1 / 10</span><b id="questionType">자료 해석</b><small id="questionId">BR01-Q01</small></p>
+            <div class="timer-number" id="timerNumberWrap"><b id="timerNumber">45</b><span>초</span></div>
+          </div>
+          <div class="question-progress" id="questionProgress" aria-label="설전 문항 진행률"></div>
+          <div class="timer-track"><i id="timerBar"></i></div>
+          <h3 id="questionPrompt"></h3>
+          <p class="question-context" id="questionContext"></p>
+          <div class="choices" id="choiceList"></div>
+          <div class="feedback" id="feedback" hidden aria-live="polite">
+            <b id="feedbackTitle"></b>
+            <p id="feedbackText"></p>
+            <small id="feedbackFact"></small>
+            <button class="primary" id="feedbackButton" type="button">다음 근거</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="screen result-screen" id="resultScreen" hidden>
+      <aside class="result-character" aria-hidden="true">
+        <img id="resultCharacter" src="assets/characters/player-curator.png" alt="" width="1024" height="1536">
+        <p id="resultCharacterLine">근거 확보 완료!</p>
+      </aside>
+      <div class="result-mark" id="resultMark" aria-hidden="true">✓</div>
+      <p class="eyebrow" id="resultEyebrow">LOCK 01 · RESTORED</p>
+      <h2 id="resultTitle">전시 복구 완료</h2>
+      <p id="resultText"></p>
+      <div class="result-stats" id="resultStats"></div>
+      <article class="memory-preview">
+        <span>이번 전시의 기억 카드</span>
+        <h3 id="resultEvidence">주먹도끼</h3>
+        <dl>
+          <div><dt>관찰</dt><dd id="resultObservation"></dd></div>
+          <div><dt>추론</dt><dd id="resultInference"></dd></div>
+          <div><dt>아직 모름</dt><dd id="resultUnknown"></dd></div>
+        </dl>
+      </article>
+      <div class="result-actions">
+        <button class="primary" id="resultPrimaryButton" type="button">다음 전시</button>
+        <button class="secondary" id="resultMemoryButton" type="button">기억 보관함</button>
+        <button class="text-button" id="resultVaultButton" type="button">수장고 목록</button>
+      </div>
+    </section>
+
+    <section class="screen memory-screen" id="memoryScreen" hidden>
+      <div class="section-head">
+        <div><p class="eyebrow">EVIDENCE ARCHIVE</p><h2>기억 보관함</h2></div>
+        <p>맞힌 근거는 LEARNING, 전시를 복구하면 그 차시의 관찰과 추론이 CLEAR로 남습니다.</p>
+      </div>
+      <div class="memory-summary">
+        <div><span>습득한 근거</span><b id="memorySummaryQuestions">0 / 12</b></div>
+        <div><span>복구한 전시</span><b id="memorySummaryLessons">0 / 6</b></div>
+        <div><span>학예사 평판</span><b id="memorySummaryReputation">50</b></div>
+      </div>
+      <div class="memory-empty" id="memoryEmpty"><b>아직 보관한 근거가 없습니다.</b><p>설전에서 정답을 맞히면 이곳에 즉시 기록됩니다.</p></div>
+      <div class="memory-list" id="memoryList"></div>
+      <div class="screen-actions split-actions sticky-actions">
+        <button class="secondary" id="memoryBackButton" type="button">돌아가기</button>
+        <button class="primary" id="memoryContinueButton" type="button">조사 계속</button>
+      </div>
+    </section>
+
+    <section class="screen final-screen" id="finalScreen" hidden>
+      <figure class="final-visual">
+        <img src="assets/reconstructions/bangudae-coastal-life.png" alt="바위에 그림을 새기고 배와 그물, 작살을 이용해 협력하는 선사 시대 생활 재구성 장면" width="1672" height="941">
+        <figcaption>생활 모습 재구성 이미지 · 생성형 이미지</figcaption>
+      </figure>
+      <div class="final-copy">
+        <p class="eyebrow">EPILOGUE · VAULT 0 RESTORED</p>
+        <h2>기록 이전,<br><em>역사는 있었다</em></h2>
+        <blockquote>“정정합니다. 기록이 없다는 것은 역사가 없다는 뜻이 아니었습니다, 휴먼.”</blockquote>
+        <p>모아가 마지막으로 묻습니다. “그럼 우리가 본 생활 장면은 전부 진짜야?”</p>
+        <div class="final-question" id="finalQuestion">
+          <button type="button" data-final-choice="wrong">실제 모습 그대로다</button>
+          <button type="button" data-final-choice="correct">유물을 바탕으로 한 재구성이다</button>
+          <button type="button" data-final-choice="wrong">모두 근거 없는 상상이다</button>
+        </div>
+        <div class="final-feedback" id="finalFeedback" aria-live="polite">마지막 답을 선택하세요.</div>
+        <div class="final-actions" id="finalActions" hidden>
+          <button class="secondary" id="finalMemoryButton" type="button">완성된 기억 보관함</button>
+          <button class="primary" id="finalVaultButton" type="button">복구된 전시 다시 보기</button>
+          <button class="text-button" id="restartButton" type="button">기록을 지우고 다시 시작</button>
+          <a href="../">CommonSenses 목록으로</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>만든 곳 · <b>supalabs</b></span>
+    <a href="https://supaclass.co" target="_blank" rel="noopener">supaclass.co</a>
+    <a href="https://supapad.co" target="_blank" rel="noopener">supapad.co</a>
+    <button id="footerSourcesButton" type="button">자료 안내</button>
+  </footer>
+</div>
+
+<dialog class="info-dialog" id="infoDialog">
+  <form method="dialog">
+    <button class="dialog-close" aria-label="닫기">×</button>
+    <p class="eyebrow">SOURCES & RECONSTRUCTION</p>
+    <h2>실제 자료와 재구성</h2>
+    <p>유물·유적 사진은 소장·관리 기관이 공개한 실제 자료입니다. 생활 장면은 지도서와 유물·유적을 바탕으로 만든 생성형 재구성 이미지이며 당시를 촬영한 사진이 아닙니다.</p>
+    <ul>
+      <li><a href="https://www.museum.go.kr/MUSEUM/contents/M0502000000.do?relicId=2486&schM=view&searchId=search" target="_blank" rel="noopener">국립중앙박물관 · 주먹도끼</a></li>
+      <li><a href="https://www.museum.go.kr/MUSEUM/contents/M0502000000.do?relicId=4328&schM=view&searchId=search" target="_blank" rel="noopener">국립중앙박물관 · 빗살무늬토기</a></li>
+      <li><a href="https://www.museum.go.kr/MUSEUM/contents/M0501000000.do?relicRecommendId=254455&schM=view" target="_blank" rel="noopener">국립중앙박물관 · 반달돌칼</a></li>
+      <li><a href="https://www.museum.go.kr/MUSEUM/contents/M0502000000.do?relicId=1991&schM=view" target="_blank" rel="noopener">국립중앙박물관 · 농경문 청동기</a></li>
+      <li><a href="https://www.museum.go.kr/MUSEUM/contents/M0502000000.do?relicId=2040&schM=view" target="_blank" rel="noopener">국립중앙박물관 · 비파형 동검</a></li>
+      <li><a href="https://heritage.go.kr/heri/cul/culSelectDetail.do?ccbaAsno=0001430000000&ccbaCpno=2333501430000&ccbaCtcd=35&ccbaKdcd=23&pageNo=1_1_1_0" target="_blank" rel="noopener">국가유산청 · 고창 부곡리 고인돌</a></li>
+      <li><a href="https://www.heritage.go.kr/heri/cul/culSelectDetail.do?ccbaAsno=0002850000000&ccbaCpno=1112602850000&ccbaCtcd=26&ccbaKdcd=11&pageNo=1_1_1_0" target="_blank" rel="noopener">국가유산청 · 반구대 암각화</a></li>
+    </ul>
+    <p class="fineprint">실제 사진은 `실제 유물` 또는 `실제 유적`, 생성 이미지는 `생활 모습 재구성 이미지 · 생성형 이미지`로 화면에 구분해 표시합니다.</p>
+    <p class="fineprint">단순한 학습용 서사이며 특정 단체의 주장이나 사상을 담지 않았습니다.</p>
+  </form>
+</dialog>
+
+<dialog class="image-dialog" id="imageDialog">
+  <form method="dialog">
+    <button class="dialog-close" aria-label="닫기">×</button>
+    <img id="dialogImage" src="assets/artifacts/handaxe.jpg" alt="">
+    <div><b id="dialogImageName">주먹도끼</b><span id="dialogImageMeta"></span></div>
+  </form>
+</dialog>
+
+<script src="story.js?v=20260816-4"></script>
+<script src="question-bank.js?v=20260816-4"></script>
+<script src="app.js?v=20260816-4"></script>
+</body>
+</html>
