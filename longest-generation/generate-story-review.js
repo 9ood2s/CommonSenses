@@ -51,12 +51,14 @@ const updated = next !== html;
 if (updated) fs.writeFileSync(reviewPath, next);
 
 const lineCount = context.STORY.reduce((sum, chapter) => sum + chapter.beats.filter((beat) => beat.type === 'line').length, 0);
+const bridgeCount = context.STORY.reduce((sum, chapter) => sum + chapter.beats.filter((beat) => beat.type === 'bridge').length, 0);
 const quizCount = context.STORY.reduce((sum, chapter) => sum + chapter.beats.filter((beat) => beat.type === 'quiz').length, 0);
 const decisionCount = context.STORY.filter((chapter) => chapter.decision).length;
 console.log(JSON.stringify({
   acts: context.ACT_INFO.length,
   chapters: context.STORY.length,
   lines: lineCount,
+  bridges: bridgeCount,
   quizzes: quizCount,
   decisions: decisionCount,
   endings: Object.keys(context.ENDINGS).length,

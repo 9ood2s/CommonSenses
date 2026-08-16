@@ -103,16 +103,17 @@
     topbar.hidden=name!=='story';window.scrollTo(0,0);
   }
   function totalQuestions(){return STORY.reduce(function(sum,chapter){return sum+chapter.beats.filter(function(beat){return beat.type==='quiz';}).length;},0);}
+  function isNarrativeBeat(beat){return !!beat&&(beat.type==='line'||beat.type==='bridge');}
   function hideStoryCards(){dialogueCard.hidden=true;decisionCard.hidden=true;duelIntro.hidden=true;briefingCard.hidden=true;quizCard.hidden=true;}
   function nextPlayable(){for(var i=0;i<STORY.length;i++){if(state.completed.indexOf(i)<0&&i<=state.unlocked)return i;}return STORY.length-1;}
   function decisionMarkerFor(chapter,firstQuiz,lastQuiz){
     var markerIndex=chapter.beats.findIndex(function(beat){return beat.type==='decision';});
     if(markerIndex<0)return null;
     if(markerIndex<firstQuiz){
-      return{phase:'intro',position:chapter.beats.slice(0,markerIndex).filter(function(beat){return beat.type==='line';}).length};
+      return{phase:'intro',position:chapter.beats.slice(0,markerIndex).filter(isNarrativeBeat).length};
     }
     if(markerIndex>lastQuiz){
-      return{phase:'outro',position:chapter.beats.slice(lastQuiz+1,markerIndex).filter(function(beat){return beat.type==='line';}).length};
+      return{phase:'outro',position:chapter.beats.slice(lastQuiz+1,markerIndex).filter(isNarrativeBeat).length};
     }
     return{phase:'duel'};
   }
@@ -120,10 +121,11 @@
     var firstQuiz=chapter.beats.findIndex(function(b){return b.type==='quiz';});
     var lastQuiz=-1;chapter.beats.forEach(function(b,i){if(b.type==='quiz')lastQuiz=i;});
     var decisionMarker=decisionMarkerFor(chapter,firstQuiz,lastQuiz);
+    if(chapter.decision&&chapter.decision.afterBeat&&!decisionMarker)throw new Error('Anchored decision marker is missing for chapter '+chapter.no);
     return{
-      intro:chapter.beats.slice(0,firstQuiz).filter(function(b){return b.type==='line';}),
+      intro:chapter.beats.slice(0,firstQuiz).filter(isNarrativeBeat),
       duelBeats:chapter.beats.slice(firstQuiz,lastQuiz+1),duelIndex:0,
-      outro:chapter.beats.slice(lastQuiz+1).filter(function(b){return b.type==='line';}),
+      outro:chapter.beats.slice(lastQuiz+1).filter(isNarrativeBeat),
       questions:chapter.beats.filter(function(b){return b.type==='quiz';}),
       phase:'intro',lineIndex:0,qCursor:0,currentQuestion:null,foeHp:100,trust:100,trustMax:100,
       right:0,wrong:0,timeouts:0,tactic:null,timeBonus:0,statusShield:false,statusStart:state.status,decisionDone:!!state.decisions[chapter.no],pendingDecision:null,
@@ -138,8 +140,8 @@
     var firstQuiz=chapter.beats.findIndex(function(beat){return beat.type==='quiz';}),lastQuiz=-1;
     chapter.beats.forEach(function(beat,index){if(beat.type==='quiz')lastQuiz=index;});
     return{
-      intro:chapter.beats.slice(0,firstQuiz).filter(function(beat){return beat.type==='line';}).length,
-      outro:chapter.beats.slice(lastQuiz+1).filter(function(beat){return beat.type==='line';}).length
+      intro:chapter.beats.slice(0,firstQuiz).filter(isNarrativeBeat).length,
+      outro:chapter.beats.slice(lastQuiz+1).filter(isNarrativeBeat).length
     };
   }
   function checkpointDescription(index){
@@ -413,13 +415,13 @@
     if(run.phase==='intro'){
       if(run.decisionMarker&&run.decisionMarker.phase==='intro'&&run.decisionMarker.position===run.lineIndex&&!run.decisionDone){renderDecision();return;}
       if(run.lineIndex<run.intro.length){renderLine(run.intro[run.lineIndex]);updateTrack();return;}
-      if(STORY[state.current].decision&&!run.decisionMarker&&!run.decisionDone){renderDecision();return;}
+      if(STORY[state.current].decision&&!STORY[state.current].decision.afterBeat&&!run.decisionMarker&&!run.decisionDone){renderDecision();return;}
       renderDuelIntro();return;
     }
     if(run.phase==='duel'){
       if(run.duelIndex>=run.duelBeats.length){finishDuel(run.foeHp<=0&&run.trust>0);return;}
       var duelBeat=run.duelBeats[run.duelIndex];
-      if(duelBeat.type==='line'){renderLine(duelBeat);updateTrack();return;}
+      if(isNarrativeBeat(duelBeat)){renderLine(duelBeat);updateTrack();return;}
       if(duelBeat.type==='decision'){
         if(run.decisionDone){run.duelIndex++;renderFlow();return;}
         renderDecision();return;
@@ -543,7 +545,7 @@
     document.getElementById('feedbackFact').textContent=beat.fact;
     var nextBeat=run.duelBeats[run.duelIndex+1];
     if(run.trust<=0||(!nextBeat&&run.foeHp>0))feedbackMode='lose';else feedbackMode='advance';
-    feedbackButton.textContent=feedbackMode==='lose'?'패배 확인':nextBeat&&nextBeat.type==='line'?'다음 장면':nextBeat&&nextBeat.type==='decision'?'인생 갈림길':nextBeat?'다음 근거':'오늘을 넘긴다';feedbackButton.focus({preventScroll:true});
+    feedbackButton.textContent=feedbackMode==='lose'?'패배 확인':isNarrativeBeat(nextBeat)?'다음 장면':nextBeat&&nextBeat.type==='decision'?'인생 갈림길':nextBeat?'다음 근거':'오늘을 넘긴다';feedbackButton.focus({preventScroll:true});
   }
   function updateDuelHud(){
     document.getElementById('foeBar').style.width=run.foeHp+'%';document.getElementById('foeHp').textContent=run.foeHp+' / 100';

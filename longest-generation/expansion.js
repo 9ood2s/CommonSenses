@@ -3,22 +3,19 @@
   var pack=window.CS_EXPANSION||{extras:[],bonus:[],decisionTemplates:[],endings:{}};
   var originals=window.STORY.slice();
 
+  function uniqueAnchorIndex(chapter,anchor,kind){
+    var matches=[];
+    chapter.beats.forEach(function(beat,index){if(beat.id===anchor||beat.label===anchor)matches.push(index);});
+    if(matches.length!==1)throw new Error(kind+' anchor must match exactly once: '+anchor+' (chapter '+chapter.title+', matches '+matches.length+')');
+    return matches[0];
+  }
+
   (pack.bonus||[]).forEach(function(entry){
     var chapter=originals[Number(entry.original)-1];
     if(!chapter||!entry.quiz)return;
-    var anchor=entry.afterBeat&&chapter.beats.findIndex(function(beat){return beat.id===entry.afterBeat||beat.label===entry.afterBeat;});
-    var insertAt;
-    if(anchor>=0){
-      insertAt=anchor+1;
-    }else{
-      var last=-1;
-      chapter.beats.forEach(function(beat,index){if(beat.type==='quiz')last=index;});
-      insertAt=last+1;
-      for(var next=last+1;next<chapter.beats.length;next++){
-        if(chapter.beats[next].type==='line'){insertAt=next+1;break;}
-      }
-    }
-    chapter.beats.splice(insertAt,0,entry.quiz);
+    if(!entry.afterBeat)throw new Error('Bonus question is missing an explicit story anchor: '+entry.quiz.id);
+    var anchor=uniqueAnchorIndex(chapter,entry.afterBeat,'Bonus question '+entry.quiz.id);
+    chapter.beats.splice(anchor+1,0,entry.quiz);
   });
 
   var expanded=[];
@@ -60,8 +57,8 @@
       var chapter=STORY[no-1],decision=pack.decisionTemplates[index];
       chapter.decision=decision;window.DECISION_INDEX[no]=index+1;
       if(decision.afterBeat){
-        var anchor=chapter.beats.findIndex(function(beat){return beat.id===decision.afterBeat||beat.label===decision.afterBeat;});
-        if(anchor>=0)chapter.beats.splice(anchor+1,0,{type:'decision',id:'decision-'+no});
+        var anchor=uniqueAnchorIndex(chapter,decision.afterBeat,'Decision '+no);
+        chapter.beats.splice(anchor+1,0,{type:'decision',id:'decision-'+no});
       }
     }
   });
