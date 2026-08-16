@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  var KEY='commonsenses.longest-generation.v2',SCHEMA=2;
+  var KEY='commonsenses.longest-generation.v3',LEGACY_KEY='commonsenses.longest-generation.v2',SCHEMA=3;
   var screens={
     title:document.getElementById('titleScreen'),map:document.getElementById('mapScreen'),
     knowledge:document.getElementById('knowledgeScreen'),story:document.getElementById('storyScreen'),
@@ -21,12 +21,24 @@
   var dialogueText=document.getElementById('dialogueText');
   var nextButton=document.getElementById('nextButton');
   var feedbackButton=document.getElementById('feedbackButton');
-  var timerId=null,run=null,endMode='next',feedbackMode='next',knowledgeReturn='map',knowledgeLiveQuestion=false;
+  var timerId=null,run=null,endMode='next',feedbackMode='next',knowledgeReturn='map',knowledgeLiveQuestion=false,knowledgeResumeCheckpoint=false;
   var scenePreloads={},sceneCurrentAct=1,sceneSwapToken=0;
 
-  function blankState(){return{schema:SCHEMA,storyLength:STORY.length,started:false,current:0,unlocked:0,completed:[],answered:[],attempted:[],status:30,wins:0,losses:0,decisions:{},routes:{record:0,love:0,status:0,honor:0,survival:0}};}
+  function blankState(){return{schema:SCHEMA,storyLength:STORY.length,started:false,current:0,unlocked:0,completed:[],answered:[],attempted:[],status:30,wins:0,losses:0,decisions:{},routes:{record:0,love:0,status:0,honor:0,survival:0},checkpoints:{}};}
+  function rollbackAttemptsInData(data){
+    var points=data&&data.checkpoints;if(!points||typeof points!=='object')return false;
+    var activeKeys=Object.keys(points).filter(function(key){return points[key]&&points[key].activeAttempt;});if(!activeKeys.length)return false;
+    activeKeys.sort(function(a,b){return Number(points[b].savedAt||0)-Number(points[a].savedAt||0);});
+    var snapshot=points[activeKeys[0]].activeAttempt;
+    if(snapshot&&Array.isArray(snapshot.answered)&&Array.isArray(snapshot.attempted)){
+      data.status=Math.max(0,Math.min(100,Number(snapshot.status)||0));data.answered=snapshot.answered.slice();data.attempted=snapshot.attempted.slice();
+    }
+    activeKeys.forEach(function(key){delete points[key].activeAttempt;});return true;
+  }
   function normalizeState(data){
-    if(!data||data.schema!==SCHEMA||Number(data.storyLength)!==STORY.length||!Array.isArray(data.completed)||!Array.isArray(data.answered))return blankState();
+    var schema=Number(data&&data.schema);
+    if(!data||(schema!==SCHEMA&&schema!==2)||Number(data.storyLength)!==STORY.length||!Array.isArray(data.completed)||!Array.isArray(data.answered))return null;
+    data.schema=SCHEMA;data.storyLength=STORY.length;
     data.current=Math.max(0,Math.min(STORY.length-1,Number(data.current)||0));
     data.unlocked=Math.max(0,Math.min(STORY.length-1,Number(data.unlocked)||0));
     data.attempted=Array.isArray(data.attempted)?data.attempted.slice():data.answered.slice();
@@ -35,11 +47,39 @@
     data.decisions=data.decisions&&typeof data.decisions==='object'?data.decisions:{};
     data.routes=data.routes&&typeof data.routes==='object'?data.routes:{};
     ['record','love','status','honor','survival'].forEach(function(key){data.routes[key]=Number(data.routes[key])||0;});
+    data.checkpoints=data.checkpoints&&typeof data.checkpoints==='object'?data.checkpoints:{};
+    Object.keys(data.checkpoints).forEach(function(chapterNo){
+      var point=data.checkpoints[chapterNo],lineIndex=Number(point&&point.lineIndex);
+      if(!point||(point.phase!=='intro'&&point.phase!=='outro')||!Number.isFinite(lineIndex)||lineIndex<0){delete data.checkpoints[chapterNo];return;}
+      var normalizedPoint={
+        phase:point.phase,lineIndex:Math.floor(lineIndex),savedAt:Number(point.savedAt)||0,
+        right:Math.max(0,Number(point.right)||0),wrong:Math.max(0,Number(point.wrong)||0),timeouts:Math.max(0,Number(point.timeouts)||0),
+        statusStart:Number.isFinite(Number(point.statusStart))?Number(point.statusStart):data.status
+      };
+      if(point.activeAttempt&&Array.isArray(point.activeAttempt.answered)&&Array.isArray(point.activeAttempt.attempted)){
+        normalizedPoint.activeAttempt={status:Number(point.activeAttempt.status)||0,answered:point.activeAttempt.answered.slice(),attempted:point.activeAttempt.attempted.slice()};
+      }
+      data.checkpoints[chapterNo]=normalizedPoint;
+    });
+    rollbackAttemptsInData(data);
     return data;
   }
-  function loadState(){try{var raw=localStorage.getItem(KEY);if(raw)return normalizeState(JSON.parse(raw));}catch(e){}return blankState();}
+  function loadState(){
+    var keys=[KEY,LEGACY_KEY];
+    for(var i=0;i<keys.length;i++){
+      var loaded=null;
+      try{
+        var raw=localStorage.getItem(keys[i]);if(!raw)continue;
+        loaded=normalizeState(JSON.parse(raw));
+      }catch(e){}
+      if(!loaded)continue;
+      try{localStorage.setItem(KEY,JSON.stringify(loaded));}catch(e){}
+      return loaded;
+    }
+    return blankState();
+  }
   var state=loadState();
-  function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}updateHud();}
+  function saveState(){state.schema=SCHEMA;state.storyLength=STORY.length;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}updateHud();updateContinueControls();}
   function rank(){
     if(state.status>=85)return'대대로 남은 명문';
     if(state.status>=65)return'고을이 믿는 장부';
@@ -74,12 +114,74 @@
       questions:chapter.beats.filter(function(b){return b.type==='quiz';}),
       phase:'intro',lineIndex:0,qCursor:0,currentQuestion:null,foeHp:100,trust:100,trustMax:100,
       right:0,wrong:0,timeouts:0,tactic:null,timeBonus:0,statusShield:false,statusStart:state.status,decisionDone:!!state.decisions[chapter.no],pendingDecision:null,
-      currentRemaining:0,choiceOrder:null,sceneDate:chapter.date,scenePlace:chapter.place
+      currentRemaining:0,choiceOrder:null,sceneDate:chapter.date,scenePlace:chapter.place,replay:state.completed.indexOf(state.current)>=0
     };
+  }
+  function checkpointFor(index){
+    var chapter=STORY[index];if(!chapter||!state.checkpoints)return null;
+    return state.checkpoints[String(chapter.no)]||null;
+  }
+  function lineCounts(chapter){
+    var firstQuiz=chapter.beats.findIndex(function(beat){return beat.type==='quiz';}),lastQuiz=-1;
+    chapter.beats.forEach(function(beat,index){if(beat.type==='quiz')lastQuiz=index;});
+    return{
+      intro:chapter.beats.slice(0,firstQuiz).filter(function(beat){return beat.type==='line';}).length,
+      outro:chapter.beats.slice(lastQuiz+1).filter(function(beat){return beat.type==='line';}).length
+    };
+  }
+  function checkpointDescription(index){
+    var chapter=STORY[index],point=checkpointFor(index);if(!chapter||!point)return'';
+    var counts=lineCounts(chapter);
+    if(point.phase==='outro')return counts.outro?'후일담 '+Math.min(point.lineIndex+1,counts.outro)+'/'+counts.outro:'장 마침 직전';
+    if(point.lineIndex>=counts.intro)return chapter.decision&&!state.decisions[chapter.no]?'선택 직전':'설전 직전';
+    return'장면 '+Math.min(point.lineIndex+1,counts.intro)+'/'+counts.intro;
+  }
+  function continueButtonText(){
+    if(state.completed.length===STORY.length)return'바뀐 현재 보기';
+    var index=nextPlayable(),saved=checkpointDescription(index);
+    return'이어하기 · '+String(index+1).padStart(2,'0')+'장'+(saved?' · '+saved:'');
+  }
+  function updateContinueControls(){
+    var button=document.getElementById('continueButton'),mapButton=document.getElementById('mapContinueButton');
+    if(button){button.hidden=!state.started;if(state.started)button.textContent=continueButtonText();}
+    if(mapButton)mapButton.textContent=state.completed.length===STORY.length?'바뀐 현재':continueButtonText().replace('이어하기','계속');
+  }
+  function rebuildSceneContext(activeRun,chapter){
+    activeRun.sceneDate=chapter.date;activeRun.scenePlace=chapter.place;
+    function absorb(lines,limit){for(var i=0;i<Math.min(limit,lines.length);i++){if(lines[i].date)activeRun.sceneDate=lines[i].date;if(lines[i].place)activeRun.scenePlace=lines[i].place;}}
+    if(activeRun.phase==='outro'){absorb(activeRun.intro,activeRun.intro.length);absorb(activeRun.outro,activeRun.lineIndex+1);}
+    else absorb(activeRun.intro,activeRun.lineIndex+1);
+  }
+  function restoreCheckpoint(activeRun,chapter){
+    var point=state.checkpoints&&state.checkpoints[String(chapter.no)];if(!point)return activeRun;
+    activeRun.phase=point.phase;
+    activeRun.lineIndex=Math.min(point.phase==='outro'?activeRun.outro.length:activeRun.intro.length,Math.max(0,point.lineIndex));
+    if(point.phase==='outro'){
+      activeRun.right=point.right;activeRun.wrong=point.wrong;activeRun.timeouts=point.timeouts;activeRun.statusStart=point.statusStart;
+    }
+    rebuildSceneContext(activeRun,chapter);return activeRun;
+  }
+  function saveCheckpoint(phase,lineIndex){
+    if(!run)return;
+    var chapter=STORY[state.current];state.checkpoints=state.checkpoints||{};
+    state.checkpoints[String(chapter.no)]={
+      phase:phase,lineIndex:Math.max(0,Math.floor(Number(lineIndex)||0)),savedAt:Date.now(),
+      right:run.right,wrong:run.wrong,timeouts:run.timeouts,statusStart:run.statusStart
+    };
+    saveState();
+  }
+  function clearCheckpoint(index){var chapter=STORY[index];if(chapter&&state.checkpoints)delete state.checkpoints[String(chapter.no)];}
+  function beginDuel(){
+    var point=checkpointFor(state.current);
+    if(!point){saveCheckpoint('intro',run.intro.length);point=checkpointFor(state.current);}
+    if(!run.replay){
+      point.activeAttempt={status:state.status,answered:state.answered.slice(),attempted:state.attempted.slice()};point.savedAt=Date.now();saveState();
+    }
+    run.phase='duel';renderFlow();
   }
   function startFresh(){
     if(state.started&&!window.confirm('저장된 생존 기록을 지우고 처음부터 시작할까요?'))return;
-    state=blankState();state.started=true;saveState();openChapter(0);
+    state=blankState();state.started=true;try{localStorage.removeItem(LEGACY_KEY);}catch(e){}saveState();openChapter(0);
   }
   function continueStory(){if(state.completed.length===STORY.length){showFinal();return;}openChapter(nextPlayable());}
 
@@ -144,12 +246,9 @@
     });}
     var jobs=critical.map(function(src){return preloadPortraitAsset(src,true);});
     return Promise.allSettled(jobs).then(function(){
-      loadState.textContent='준비 완료 · '+ACT_INFO.length+'막 '+STORY.length+'장 · 인생 선택 '+Object.keys(window.DECISION_INDEX||{}).length+'회 · 고유 '+totalQuestions()+'문항';
+      loadState.textContent='준비 완료 · '+ACT_INFO.length+'막 '+STORY.length+'장 · 인생 선택 '+Object.keys(window.DECISION_INDEX||{}).length+'회 · 고유 '+totalQuestions()+'문항 · 장면 자동 저장';
       document.getElementById('startButton').disabled=false;
-      if(state.started){
-        document.getElementById('continueButton').hidden=false;
-        document.getElementById('continueButton').textContent=state.completed.length===STORY.length?'바뀐 현재 보기':'이어하기 · '+String(nextPlayable()+1).padStart(2,'0')+'장';
-      }
+      updateContinueControls();
       var connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
       if(connection&&(connection.saveData||/^(?:slow-)?2g$|^3g$/.test(connection.effectiveType||'')))return;
       var warm=function(){
@@ -294,7 +393,7 @@
     document.getElementById('sceneDate').textContent=chapter.date;document.getElementById('scenePlace').textContent=chapter.place;document.getElementById('sceneTitle').textContent=chapter.title;setSceneBackdrop(chapter);
   }
   function openChapter(index){
-    if(index>state.unlocked)return;state.started=true;state.current=index;run=makeRun(STORY[index]);saveState();setChapterHeader(STORY[index]);show('story');renderFlow();
+    if(index>state.unlocked)return;if(rollbackAttemptsInData(state))saveState();state.started=true;state.current=index;run=restoreCheckpoint(makeRun(STORY[index]),STORY[index]);saveCheckpoint(run.phase,run.lineIndex);setChapterHeader(STORY[index]);show('story');renderFlow();
   }
   function renderFlow(){
     clearTimer();
@@ -404,16 +503,16 @@
     clearTimer();run.currentRemaining=0;var beat=run.currentQuestion,buttons=[].slice.call(document.querySelectorAll('.choice'));buttons.forEach(function(b){b.disabled=true;});
     var correct=choice===beat.answer,correctButton=buttons.find(function(b){return Number(b.dataset.answer)===beat.answer;});
     if(correct){
-      var damage=Math.ceil(100/run.questions.length);button.classList.add('correct');run.foeHp=Math.max(0,run.foeHp-damage);run.right++;changeStatus(3);
-      if(state.answered.indexOf(beat.id)<0)state.answered.push(beat.id);
+      var damage=Math.ceil(100/run.questions.length);button.classList.add('correct');run.foeHp=Math.max(0,run.foeHp-damage);run.right++;
+      if(!run.replay){changeStatus(3);if(state.answered.indexOf(beat.id)<0)state.answered.push(beat.id);}
     }else{
       if(button)button.classList.add('wrong');if(correctButton)correctButton.classList.add('correct');run.trust=Math.max(0,run.trust-45);run.wrong++;if(timedOut)run.timeouts++;
-      var penalty=timedOut?-7:-5;if(run.statusShield){penalty+=4;run.statusShield=false;}changeStatus(penalty);
+      var penalty=timedOut?-7:-5;if(run.statusShield){penalty+=4;run.statusShield=false;}if(!run.replay)changeStatus(penalty);
     }
-    if(state.attempted.indexOf(beat.id)<0)state.attempted.push(beat.id);saveState();updateDuelHud();
+    if(!run.replay){if(state.attempted.indexOf(beat.id)<0)state.attempted.push(beat.id);saveState();}updateDuelHud();
     document.getElementById('feedback').hidden=false;
     document.getElementById('feedbackTitle').textContent=correct?'근거가 남았다 · 상대 고집 −'+Math.ceil(100/run.questions.length):timedOut?'시간 초과 · 생존력 −45':'반박당했다 · 생존력 −45';
-    document.getElementById('feedbackText').textContent=(correct?'가문 명망 +3. ':'가문 명망 −'+Math.abs(penalty)+'. ')+beat.explanation;
+    document.getElementById('feedbackText').textContent=(run.replay?'복습 재생 · 명망 변동 없음. ':(correct?'가문 명망 +3. ':'가문 명망 −'+Math.abs(penalty)+'. '))+beat.explanation;
     document.getElementById('feedbackFact').textContent=beat.fact;
     if(run.foeHp<=0)feedbackMode='win';else if(run.trust<=0||run.qCursor>=run.questions.length)feedbackMode='lose';else feedbackMode='next';
     feedbackButton.textContent=feedbackMode==='win'?'오늘을 넘긴다':feedbackMode==='lose'?'패배 확인':'다음 근거';feedbackButton.focus({preventScroll:true});
@@ -423,7 +522,7 @@
     document.getElementById('trustBar').style.width=Math.max(0,run.trust/run.trustMax*100)+'%';document.getElementById('trustHp').textContent=run.trust+' / '+run.trustMax;
   }
   function finishDuel(win){
-    clearTimer();if(win){state.wins++;run.phase='outro';run.lineIndex=0;saveState();renderFlow();}else{state.losses++;saveState();failChapter();}
+    clearTimer();if(win){if(!run.replay)state.wins++;run.phase='outro';run.lineIndex=0;saveCheckpoint('outro',0);renderFlow();}else{if(!run.replay)state.losses++;saveCheckpoint('intro',run.intro.length);failChapter();}
   }
   function updateTrack(){
     var p=run.phase==='intro'?(run.intro.length?run.lineIndex/run.intro.length*32:32):75+(run.outro.length?run.lineIndex/run.outro.length*24:24);
@@ -433,7 +532,7 @@
     var delta=state.status-run.statusStart;return'<span>정답 '+run.right+'</span><span>오답 '+run.wrong+'</span><span>시간 초과 '+run.timeouts+'</span><span>명망 '+(delta>=0?'+':'')+delta+' · '+state.status+'</span><span>'+rank()+'</span>';
   }
   function completeChapter(){
-    var i=state.current,chapter=STORY[i];if(state.completed.indexOf(i)<0)state.completed.push(i);if(i<STORY.length-1)state.unlocked=Math.max(state.unlocked,i+1);saveState();
+    var i=state.current,chapter=STORY[i];if(state.completed.indexOf(i)<0)state.completed.push(i);if(i<STORY.length-1)state.unlocked=Math.max(state.unlocked,i+1);clearCheckpoint(i);saveState();
     screens.end.classList.remove('failed');document.querySelector('.end-mark').textContent='生';
     document.getElementById('completeAct').textContent=chapter.act+'막 · '+String(chapter.no).padStart(2,'0')+'장 · 오늘 생존';
     document.getElementById('completeTitle').textContent=chapter.title;document.getElementById('completeSummary').textContent=chapter.summary;document.getElementById('endStats').innerHTML=resultStats();
@@ -457,18 +556,19 @@
     if(tactic==='trust')run.statusShield=true;else run.timeBonus=6;setChapterHeader(STORY[state.current]);show('story');renderBriefing();
   }
   function renderMap(){
-    var wrap=document.getElementById('actList');wrap.innerHTML='';
+    if(rollbackAttemptsInData(state))saveState();var wrap=document.getElementById('actList');wrap.innerHTML='';
     ACT_INFO.forEach(function(act){
       var block=document.createElement('section');block.className='act-block';var head=document.createElement('div');head.className='act-heading';head.innerHTML='<b>'+act.no+'막</b><div><h3></h3><p></p></div>';head.querySelector('h3').textContent=act.title;head.querySelector('p').textContent=act.subtitle;
       var grid=document.createElement('div');grid.className='episode-grid';
       STORY.forEach(function(chapter,index){if(chapter.act!==act.no)return;var btn=document.createElement('button');btn.type='button';btn.className='episode-button';
         if(state.completed.indexOf(index)>=0)btn.classList.add('done');if(index===nextPlayable()&&state.completed.length<STORY.length)btn.classList.add('current');btn.disabled=index>state.unlocked;
         btn.innerHTML='<span>'+String(chapter.no).padStart(2,'0')+'</span><div><b></b><small></small></div>';btn.querySelector('b').textContent=chapter.title;
-        btn.querySelector('small').textContent=index>state.unlocked?'잠김':state.completed.indexOf(index)>=0?'생존 · 다시 보기':chapter.duel.name+'과의 설전';btn.addEventListener('click',function(){openChapter(index);});grid.appendChild(btn);
+        var saved=checkpointDescription(index);
+        btn.querySelector('small').textContent=index>state.unlocked?'잠김':saved?'자동 저장 · '+saved:state.completed.indexOf(index)>=0?'생존 · 다시 보기':chapter.duel.name+'과의 설전';btn.addEventListener('click',function(){openChapter(index);});grid.appendChild(btn);
       });
       block.appendChild(head);block.appendChild(grid);wrap.appendChild(block);
     });
-    document.getElementById('mapContinueButton').textContent=state.completed.length===STORY.length?'바뀐 현재':'계속 · '+String(nextPlayable()+1).padStart(2,'0')+'장';show('map');
+    updateContinueControls();show('map');
   }
   function renderKnowledge(returnTo){
     if(returnTo)knowledgeReturn=returnTo;var list=document.getElementById('knowledgeList'),empty=document.getElementById('knowledgeEmpty');list.innerHTML='';var cardCount=0;
@@ -484,8 +584,19 @@
     });
     empty.hidden=cardCount>0;var cards=list.querySelectorAll('.knowledge-card');if(cards.length)cards[cards.length-1].open=true;document.getElementById('knowledgeCount').textContent=state.answered.length;document.getElementById('knowledgeContinueButton').textContent=state.completed.length===STORY.length?'바뀐 현재':'계속 살아남기';show('knowledge');
   }
-  function openKnowledge(returnTo){knowledgeReturn=returnTo||'map';knowledgeLiveQuestion=knowledgeReturn==='story'&&!quizCard.hidden&&document.getElementById('feedback').hidden;renderKnowledge();}
-  function closeKnowledge(){var target=knowledgeReturn==='knowledge'?'map':knowledgeReturn;show(target);if(target==='story'&&knowledgeLiveQuestion)renderQuestion(true);knowledgeLiveQuestion=false;}
+  function openKnowledge(returnTo){
+    knowledgeReturn=returnTo||'map';knowledgeLiveQuestion=knowledgeReturn==='story'&&!quizCard.hidden&&document.getElementById('feedback').hidden;knowledgeResumeCheckpoint=false;
+    if(knowledgeLiveQuestion){
+      clearTimer();rollbackAttemptsInData(state);run=restoreCheckpoint(makeRun(STORY[state.current]),STORY[state.current]);saveCheckpoint(run.phase,run.lineIndex);knowledgeLiveQuestion=false;knowledgeResumeCheckpoint=true;
+    }
+    renderKnowledge();
+  }
+  function closeKnowledge(){
+    var target=knowledgeReturn==='knowledge'?'map':knowledgeReturn;show(target);
+    if(target==='story'&&knowledgeResumeCheckpoint){setChapterHeader(STORY[state.current]);renderFlow();}
+    else if(target==='story'&&knowledgeLiveQuestion)renderQuestion(true);
+    knowledgeLiveQuestion=false;knowledgeResumeCheckpoint=false;
+  }
   function endingKey(){
     var order=['record','love','status','honor','survival'],caps={record:0,love:0,status:0,honor:0,survival:0};
     STORY.forEach(function(chapter){if(!chapter.decision)return;order.forEach(function(key){caps[key]+=Math.max.apply(null,chapter.decision.options.map(function(option){return Number(option.effects&&option.effects[key])||0;}));});});
@@ -517,9 +628,9 @@
     show('final');
   }
 
-  nextButton.addEventListener('click',function(){if(run.phase==='intro')run.lineIndex++;else if(run.phase==='outro')run.lineIndex++;renderFlow();});
+  nextButton.addEventListener('click',function(){if(run.phase==='intro')run.lineIndex++;else if(run.phase==='outro')run.lineIndex++;saveCheckpoint(run.phase,run.lineIndex);renderFlow();});
   Array.prototype.forEach.call(document.querySelectorAll('[data-tactic]'),function(button){button.addEventListener('click',function(){chooseTactic(button.dataset.tactic);});});
-  document.getElementById('briefingStartButton').addEventListener('click',function(){run.phase='duel';renderFlow();});
+  document.getElementById('briefingStartButton').addEventListener('click',beginDuel);
   document.getElementById('decisionContinueButton').addEventListener('click',confirmDecision);
   feedbackButton.addEventListener('click',function(){if(feedbackMode==='win')finishDuel(true);else if(feedbackMode==='lose')finishDuel(false);else renderQuestion();});
   document.getElementById('startButton').addEventListener('click',startFresh);document.getElementById('continueButton').addEventListener('click',continueStory);
@@ -528,7 +639,7 @@
   document.getElementById('endMapButton').addEventListener('click',renderMap);document.getElementById('endKnowledgeButton').addEventListener('click',function(){openKnowledge('end');});document.getElementById('finalKnowledgeButton').addEventListener('click',function(){openKnowledge('final');});
   document.getElementById('knowledgeBackButton').addEventListener('click',closeKnowledge);document.getElementById('knowledgeContinueButton').addEventListener('click',continueStory);
   document.getElementById('nextChapterButton').addEventListener('click',function(){if(endMode==='retry')retryFromBriefing();else if(endMode==='final')showFinal();else openChapter(state.current+1);});
-  document.getElementById('reviewButton').addEventListener('click',renderMap);document.getElementById('restartButton').addEventListener('click',function(){if(!window.confirm('모든 생존 기록과 가문 명망을 지우고 처음부터 시작할까요?'))return;state=blankState();try{localStorage.removeItem(KEY);}catch(e){}document.getElementById('continueButton').hidden=true;updateHud();show('title');});
+  document.getElementById('reviewButton').addEventListener('click',renderMap);document.getElementById('restartButton').addEventListener('click',function(){if(!window.confirm('모든 생존 기록과 가문 명망을 지우고 처음부터 시작할까요?'))return;state=blankState();try{localStorage.removeItem(KEY);localStorage.removeItem(LEGACY_KEY);}catch(e){}updateHud();updateContinueControls();show('title');});
   var dialog=document.getElementById('infoDialog');document.getElementById('sourcesButton').addEventListener('click',function(){dialog.showModal();});
   document.addEventListener('keydown',function(event){if(screens.story.hidden)return;if(!quizCard.hidden&&['1','2','3','4'].indexOf(event.key)>=0){var choices=quizCard.querySelectorAll('.choice:not(:disabled)'),index=Number(event.key)-1;if(choices[index])choices[index].click();}else if((event.key==='Enter'||event.key===' ')&&!dialogueCard.hidden){event.preventDefault();nextButton.click();}});
 
