@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>최악의 세대 · 저장 관리</title>
+  <style>
+    :root{color-scheme:light;--ink:#282018;--paper:#f6efdf;--line:#cbbda6;--accent:#9e402f;--muted:#65594b}
+    *{box-sizing:border-box}
+    body{display:grid;min-height:100vh;margin:0;padding:20px;place-items:center;background:#1f1b17;color:var(--ink);font-family:Arial,"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+    main{width:min(660px,100%);padding:clamp(26px,6vw,42px);border:1px solid #6d6254;border-radius:14px;background:var(--paper);box-shadow:0 20px 60px #0008}
+    .eyebrow{margin:0 0 8px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.1em}
+    h1{margin:0 0 12px;font-size:clamp(27px,5vw,40px);letter-spacing:-.045em}
+    p{line-height:1.75;color:var(--muted)}
+    .status{margin:20px 0 8px;padding:14px 15px;border:1px solid var(--line);border-radius:8px;background:#fffaf0;font-weight:800;line-height:1.55}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+    button,a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:11px 16px;border:1px solid transparent;border-radius:7px;background:#4a433a;color:#fff;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
+    button.primary,a.primary{background:var(--accent)}
+    button:disabled{cursor:not-allowed;opacity:.45}
+    .note{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:13px}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">COMMONSENSES · LOCAL SAVE TOOL</p>
+    <h1>『최악의 세대』 저장 관리</h1>
+    <p>전 회차 클리어 저장본을 이 브라우저의 로컬 웹판에 설치합니다. 기존 v3 저장이 있으면 시간표시가 붙은 별도 백업 키로 먼저 보존합니다.</p>
+    <div class="status" id="status">실행 환경을 확인하는 중…</div>
+    <div class="actions">
+      <a class="primary" id="openWeb" href="http://127.0.0.1:8766/longest-generation/save-loader.html" hidden>로컬 웹판에서 열기</a>
+      <button class="primary" id="install" type="button" hidden>전 회차 저장본 설치</button>
+      <a id="game" href="./">게임 열기</a>
+      <a id="review" href="story-review.html">대본 검토본 열기</a>
+      <a id="download" href="all-clear-save.json" download>JSON 저장본 받기</a>
+    </div>
+    <p class="note"><b>중요:</b> <code>file://</code>로 직접 연 페이지와 <code>http://127.0.0.1</code>의 게임은 저장 공간이 서로 다릅니다. 게임에 적용하려면 반드시 ‘로컬 웹판에서 열기’를 거쳐 설치하세요.</p>
+  </main>
+  <script>
+  (function(){
+    'use strict';
+    var key='commonsenses.longest-generation.v3';
+    var status=document.getElementById('status'),install=document.getElementById('install'),openWeb=document.getElementById('openWeb');
+    if(location.protocol==='file:'){
+      status.textContent='파일은 정상입니다. 다만 게임 저장 적용은 로컬 웹 주소에서 해야 합니다.';
+      document.getElementById('game').href='http://127.0.0.1:8766/longest-generation/';
+      document.getElementById('game').textContent='로컬 웹 게임 열기';
+      openWeb.hidden=false;
+      return;
+    }
+    fetch('all-clear-save.json',{cache:'no-store'}).then(function(response){
+      if(!response.ok)throw new Error('JSON 저장본을 읽지 못했습니다.');
+      return response.json();
+    }).then(function(save){
+      if(save.schema!==3||save.storyLength!==48||!Array.isArray(save.completed)||save.completed.length!==48)throw new Error('저장본 형식이 올바르지 않습니다.');
+      status.textContent='설치 준비 완료 · 48장 · 144문항 · 기록 엔딩';
+      install.hidden=false;
+      install.addEventListener('click',function(){
+        try{
+          var old=localStorage.getItem(key);
+          if(old)localStorage.setItem(key+'.backup.'+Date.now(),old);
+          localStorage.setItem(key,JSON.stringify(save));
+          status.textContent='설치 완료 · 게임 열기를 누르면 144 / 144 기록을 확인할 수 있습니다.';
+          install.hidden=true;
+        }catch(error){
+          status.textContent='설치 실패 · 브라우저의 사이트 데이터 저장 권한을 확인해 주세요.';
+        }
+      });
+    }).catch(function(error){
+      status.textContent=error.message;
+      install.hidden=true;
+    });
+  })();
+  </script>
+</body>
+</html>

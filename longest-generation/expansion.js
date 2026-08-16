@@ -6,9 +6,19 @@
   (pack.bonus||[]).forEach(function(entry){
     var chapter=originals[Number(entry.original)-1];
     if(!chapter||!entry.quiz)return;
-    var last=-1;
-    chapter.beats.forEach(function(beat,index){if(beat.type==='quiz')last=index;});
-    chapter.beats.splice(last+1,0,entry.quiz);
+    var anchor=entry.afterBeat&&chapter.beats.findIndex(function(beat){return beat.id===entry.afterBeat||beat.label===entry.afterBeat;});
+    var insertAt;
+    if(anchor>=0){
+      insertAt=anchor+1;
+    }else{
+      var last=-1;
+      chapter.beats.forEach(function(beat,index){if(beat.type==='quiz')last=index;});
+      insertAt=last+1;
+      for(var next=last+1;next<chapter.beats.length;next++){
+        if(chapter.beats[next].type==='line'){insertAt=next+1;break;}
+      }
+    }
+    chapter.beats.splice(insertAt,0,entry.quiz);
   });
 
   var expanded=[];
@@ -29,25 +39,30 @@
   window.STORY=expanded;
 
   window.ACT_INFO=[
-    {no:1,title:'눈을 뜬 뒤 네 번의 겨울',subtitle:'2026—1592 · 죽은 줄 알았던 역덕후가 이름과 밥값, 믿어 줄 세 집을 얻다'},
-    {no:2,title:'무너지는 조선',subtitle:'1592 · 수도와 신분, 가족의 자리가 함께 흔들리다'},
-    {no:3,title:'전쟁이 길어지는 법',subtitle:'1593—1597 · 승전보 사이에서 기근·역병·징발을 견디다'},
-    {no:4,title:'전쟁 뒤의 빈칸',subtitle:'1597—1605 · 재침과 철수 뒤 포로·신분·세금이 다시 쓰이다'},
-    {no:5,title:'대동법과 새 장부',subtitle:'1608—1616 · 시장·궁궐·의서가 전후의 삶을 바꾸다'},
-    {no:6,title:'북방이 움직이다',subtitle:'1616—1621 · 후금의 성장과 사르후, 폐모 논쟁이 겹치다'},
-    {no:7,title:'반정은 끝이 아니다',subtitle:'1623—1624 · 왕과 공신이 바뀌고 이괄의 군대가 한양에 들다'},
-    {no:8,title:'후금이 문 앞에',subtitle:'1626—1633 · 호패·정묘호란·가도 사이에서 불안이 쌓이다'},
-    {no:9,title:'남한산성의 겨울',subtitle:'1636—1637 · 주화와 척화, 씨앗과 군량 사이의 선택'},
-    {no:10,title:'돌아오는 사람의 값',subtitle:'1638 · 속환의 은과 귀환자의 낙인이 전쟁 뒤를 잇다'},
-    {no:11,title:'명이 무너진 뒤',subtitle:'1641—1645 · 심양과 명청 교체, 세자의 죽음을 기록하다'},
-    {no:12,title:'북벌보다 긴 겨울',subtitle:'1649—2026 · 재건된 마을과 노년의 이야기, 다섯 현재'}
+    {no:1,title:'이름을 얻기까지',subtitle:'2026—1592 · 외톨이 이준이 서준으로 불리고, 혼자 아는 아이에서 함께 준비하는 아이가 되다'},
+    {no:2,title:'불길 속에서 함께 걷다',subtitle:'1592 · 전쟁 날짜보다 아이와 수레, 흩어진 가족을 먼저 붙들다'},
+    {no:3,title:'승전 뒤에도 굶주리다',subtitle:'1593—1597 · 승전보 사이에서 기근·역병·징발을 견디고 두 번째 침공을 맞다'},
+    {no:4,title:'전쟁이 끝난 뒤 집을 만들다',subtitle:'1597—1605 · 귀환자와 새 이웃을 받아들이고 서준과 연화가 한 가족이 되다'},
+    {no:5,title:'다시 일군 땅과 약방',subtitle:'1608—1616 · 세금과 부역의 부담 속에서 장터와 약방을 삶의 기반으로 키우다'},
+    {no:6,title:'북방에서 온 압박',subtitle:'1616—1621 · 후금의 성장과 사르후 패전이 광주의 곡식과 가족을 흔들다'},
+    {no:7,title:'바뀐 왕, 무너진 류씨',subtitle:'1623—1624 · 반정과 이괄의 난이 류태석의 장남과 남은 재산을 앗아 가다'},
+    {no:8,title:'첫 화약과 다음 전쟁',subtitle:'1626—1633 · 호패와 가도 군량을 겪으며 끝나지 않은 전쟁을 준비하다'},
+    {no:9,title:'남한산성 마흔다섯 날',subtitle:'1636—1637 · 추위와 굶주림 속에서 씨앗 일부를 쓰고 다음 봄의 몫을 지키다'},
+    {no:10,title:'돌아온 사람을 집에 들이다',subtitle:'1638 · 은과 베를 내놓고, 돌아온 옥분이 다시 가족이 되도록 문을 열다'},
+    {no:11,title:'심양에서 진실을 가르다',subtitle:'1641—1645 · 직접 본 일과 전해 들은 말, 확인할 수 없는 죽음을 구분하다'},
+    {no:12,title:'남은 삶을 넘겨주다',subtitle:'1649—2026 · 군역의 대가를 다음 세대에 알리고, 돌아온 이준이 현재의 첫 행동을 고르다'}
   ];
 
   window.DECISION_INDEX={};
   var decisionChapters=[4,8,12,16,20,24,28,32,36,40,44,48];
   decisionChapters.forEach(function(no,index){
     if(STORY[no-1]&&pack.decisionTemplates&&pack.decisionTemplates[index]){
-      STORY[no-1].decision=pack.decisionTemplates[index];window.DECISION_INDEX[no]=index+1;
+      var chapter=STORY[no-1],decision=pack.decisionTemplates[index];
+      chapter.decision=decision;window.DECISION_INDEX[no]=index+1;
+      if(decision.afterBeat){
+        var anchor=chapter.beats.findIndex(function(beat){return beat.id===decision.afterBeat||beat.label===decision.afterBeat;});
+        if(anchor>=0)chapter.beats.splice(anchor+1,0,{type:'decision',id:'decision-'+no});
+      }
     }
   });
   window.ENDINGS=pack.endings||{};

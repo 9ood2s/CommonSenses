@@ -8,7 +8,7 @@
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:title" content="최악의 세대 · THE LONGEST GENERATION">
-  <meta property="og:description" content="무쌍도 치트도 없다. 아는 것은 연표뿐. 1588년부터 1650년까지 버텨 낸 한 사람의 생존 기록.">
+  <meta property="og:description" content="무쌍도 치트도 없다. 아는 것은 시험에 나온 연도뿐. 1588년부터 1650년까지 버텨 낸 한 사람의 생존 기록.">
   <meta property="og:url" content="https://9ood2s.github.io/CommonSenses/longest-generation/">
   <meta property="og:image" content="https://9ood2s.github.io/CommonSenses/longest-generation/assets/scenes/title-war.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -56,7 +56,7 @@
     <section class="screen map-screen" id="mapScreen" hidden>
       <div class="map-head">
         <p class="eyebrow">CHRONICLE · 62 YEARS</p>
-        <h2>살아남은 연표</h2>
+        <h2>살아남은 기록</h2>
         <p>대사 한 줄마다 이 브라우저에 자동 저장됩니다. 완료한 장은 언제든 다시 볼 수 있습니다.</p>
       </div>
       <div class="act-list" id="actList"></div>
@@ -83,7 +83,7 @@
     <section class="screen story-screen" id="storyScreen" hidden>
       <div class="scene-head">
         <p><span id="sceneDate">1588.02</span> · <span id="scenePlace">경기도 광주</span></p>
-        <h2 id="sceneTitle">연표 밖으로</h2>
+        <h2 id="sceneTitle">외운 역사 밖으로</h2>
         <span>제 <b id="sceneNo">01</b> 장</span>
       </div>
       <div class="story-stage">
@@ -110,8 +110,8 @@
             <div class="duel-rule"><b>이번 장의 생존 조건</b><p>서로 다른 근거 세 개를 모두 맞혀 상대의 고집을 0으로 만든다. 하나라도 놓치면 다음 장은 열리지 않는다.</p></div>
             <p class="tactic-label">어떻게 버틸 것인가</p>
             <div class="tactics">
-              <button type="button" data-tactic="trust"><b>장부부터 펼친다</b><span>첫 실수의 명망 벌점 4 감소</span></button>
-              <button type="button" data-tactic="time"><b>연표를 더듬는다</b><span>첫 문제 제한시간 +6초</span></button>
+              <button type="button" data-tactic="trust"><b>기록부터 확인한다</b><span>첫 실수의 명망 벌점 4 감소</span></button>
+              <button type="button" data-tactic="time"><b>외운 순서를 더듬는다</b><span>첫 문제 제한시간 +6초</span></button>
             </div>
           </article>
 
@@ -129,7 +129,7 @@
           </article>
 
           <article class="briefing-card" id="briefingCard" hidden>
-            <p class="beat-label">머릿속 연표와 사료 대조</p>
+            <p class="beat-label">외운 지식과 눈앞의 사실 대조</p>
             <h3 id="briefingTitle"></h3>
             <p class="briefing-sub" id="briefingSub"></p>
             <div class="briefing-grid" id="briefingBody"></div>
@@ -183,12 +183,12 @@
       <div class="final-copy">
         <p class="eyebrow" id="finalEyebrow">EPILOGUE · 2026.09.21</p>
         <h2 id="finalTitle">조상님이<br>도왔다</h2>
-        <p id="finalText">사흘 만에 병원에서 눈을 뜬 이준은 어머니가 보여 준 시조 서준의 초상과 장부에서 일흔 살까지 이어진 삶을 확인했다. 그가 남긴 선택에 따라 집안과 현재의 모습도 달라져 있었다.</p>
+        <p id="finalText">사흘 만에 병원에서 눈을 뜬 이준은 어머니가 보여 준 시조 서준의 초상과 집안에 전한 기록에서 일흔 살까지 이어진 삶을 확인했다. 그가 남긴 선택에 따라 집안과 현재의 모습도 달라져 있었다.</p>
         <blockquote id="finalQuote">“엄마, 그 사람이… 나였어.”</blockquote>
         <div class="final-score"><span>남긴 생존 기록</span><b id="finalScore">0 / 144</b></div>
         <div class="final-score"><span>바뀐 가문 명망</span><b id="finalReputation">30</b></div>
         <button class="secondary" id="finalKnowledgeButton" type="button">생존 기록 복습</button>
-        <button class="primary" id="reviewButton" type="button">연표 다시 보기</button>
+        <button class="primary" id="reviewButton" type="button">지나온 삶 다시 보기</button>
         <button class="secondary" id="restartButton" type="button">기록 지우고 다시 시작</button>
         <a class="home-link" href="../">CommonSenses 목록으로</a>
       </div>
@@ -216,6 +216,7 @@
       <li><a href="https://contents.history.go.kr/front/tg/view.do?ganada=&amp;levelId=tg_003_2630&amp;pageUnit=10&amp;treeId=0209" target="_blank" rel="noopener">우리역사넷 · 속오군</a></li>
       <li><a href="https://contents.history.go.kr/mobile/nh/view.do?levelId=nh_030_0060_0010_0010_0030" target="_blank" rel="noopener">우리역사넷 · 대동법 시행</a></li>
       <li><a href="https://contents.history.go.kr/mobile/kc/view.do?levelId=kc_i305600" target="_blank" rel="noopener">우리역사넷 · 광해군 외교와 인조 정권</a></li>
+      <li><a href="https://sillok.history.go.kr/id/kpa_10211002_003" target="_blank" rel="noopener">조선왕조실록 · 이괄의 난 관련 역적 재산 적몰</a></li>
       <li><a href="https://contents.history.go.kr/eh_kk/teach/notebook/data/19_d06.htm" target="_blank" rel="noopener">우리역사넷 · 최명길의 주화론과 윤집의 척화론</a></li>
       <li><a href="https://contents.history.go.kr/front/tg/view.do?levelId=tg_003_2820" target="_blank" rel="noopener">우리역사넷 · 주화론과 북벌론</a></li>
     </ul>
@@ -223,13 +224,13 @@
   </form>
 </dialog>
 
-<script src="story.js?v=20260816-15"></script>
-<script src="expansion-base.js?v=20260816-15"></script>
-<script src="expansion-war.js?v=20260816-15"></script>
-<script src="expansion-politics.js?v=20260816-15"></script>
-<script src="expansion-aftermath.js?v=20260816-15"></script>
-<script src="expansion.js?v=20260816-15"></script>
-<script src="scenes.js?v=20260816-15"></script>
-<script src="app.js?v=20260816-15"></script>
+<script src="story.js?v=20260816-26"></script>
+<script src="expansion-base.js?v=20260816-16"></script>
+<script src="expansion-war.js?v=20260816-26"></script>
+<script src="expansion-politics.js?v=20260816-26"></script>
+<script src="expansion-aftermath.js?v=20260816-26"></script>
+<script src="expansion.js?v=20260816-18"></script>
+<script src="scenes.js?v=20260816-19"></script>
+<script src="app.js?v=20260816-26"></script>
 </body>
 </html>

@@ -82,9 +82,9 @@
   function saveState(){state.schema=SCHEMA;state.storyLength=STORY.length;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}updateHud();updateContinueControls();}
   function rank(){
     if(state.status>=85)return'대대로 남은 명문';
-    if(state.status>=65)return'고을이 믿는 장부';
+    if(state.status>=65)return'고을 사람들이 믿는 사람';
     if(state.status>=45)return'살아남은 기록자';
-    if(state.status>=25)return'무시당하는 연표쟁이';
+    if(state.status>=25)return'무시당하는 역사 덕후';
     return'다음 겨울이 위태롭다';
   }
   function updateHud(){
@@ -105,16 +105,29 @@
   function totalQuestions(){return STORY.reduce(function(sum,chapter){return sum+chapter.beats.filter(function(beat){return beat.type==='quiz';}).length;},0);}
   function hideStoryCards(){dialogueCard.hidden=true;decisionCard.hidden=true;duelIntro.hidden=true;briefingCard.hidden=true;quizCard.hidden=true;}
   function nextPlayable(){for(var i=0;i<STORY.length;i++){if(state.completed.indexOf(i)<0&&i<=state.unlocked)return i;}return STORY.length-1;}
+  function decisionMarkerFor(chapter,firstQuiz,lastQuiz){
+    var markerIndex=chapter.beats.findIndex(function(beat){return beat.type==='decision';});
+    if(markerIndex<0)return null;
+    if(markerIndex<firstQuiz){
+      return{phase:'intro',position:chapter.beats.slice(0,markerIndex).filter(function(beat){return beat.type==='line';}).length};
+    }
+    if(markerIndex>lastQuiz){
+      return{phase:'outro',position:chapter.beats.slice(lastQuiz+1,markerIndex).filter(function(beat){return beat.type==='line';}).length};
+    }
+    return{phase:'duel'};
+  }
   function makeRun(chapter){
     var firstQuiz=chapter.beats.findIndex(function(b){return b.type==='quiz';});
     var lastQuiz=-1;chapter.beats.forEach(function(b,i){if(b.type==='quiz')lastQuiz=i;});
+    var decisionMarker=decisionMarkerFor(chapter,firstQuiz,lastQuiz);
     return{
       intro:chapter.beats.slice(0,firstQuiz).filter(function(b){return b.type==='line';}),
+      duelBeats:chapter.beats.slice(firstQuiz,lastQuiz+1),duelIndex:0,
       outro:chapter.beats.slice(lastQuiz+1).filter(function(b){return b.type==='line';}),
       questions:chapter.beats.filter(function(b){return b.type==='quiz';}),
       phase:'intro',lineIndex:0,qCursor:0,currentQuestion:null,foeHp:100,trust:100,trustMax:100,
       right:0,wrong:0,timeouts:0,tactic:null,timeBonus:0,statusShield:false,statusStart:state.status,decisionDone:!!state.decisions[chapter.no],pendingDecision:null,
-      currentRemaining:0,choiceOrder:null,sceneDate:chapter.date,scenePlace:chapter.place,replay:state.completed.indexOf(state.current)>=0
+      decisionMarker:decisionMarker,currentRemaining:0,choiceOrder:null,sceneDate:chapter.date,scenePlace:chapter.place,replay:state.completed.indexOf(state.current)>=0
     };
   }
   function checkpointFor(index){
@@ -323,7 +336,7 @@
       return /지키|살리|명부|장부|곡식|구휼|피란|가족|증거|기록|준비|공동|씨앗|베끼|계산|도장|수량/.test(cues)?'jun-young-protect':'jun-young-awkward';
     }
     if(age==='middle'){
-      return /장부|명부|기록|베끼|도장|수량|곡식|셈|계산|문서|토지|세금|선혜|공물|색인|연표/.test(cues)?'jun-middle-ledger':'jun-middle-tired';
+      return /장부|명부|기록|베끼|도장|수량|곡식|셈|계산|문서|토지|세금|선혜|공물|색인/.test(cues)?'jun-middle-ledger':'jun-middle-tired';
     }
     if(age==='mature'){
       return /분노|화를|화가|맞서|따졌|거부|외치|요구|안\s*된다|지켜|밀고|원수|죄증|목소리|침공|청군|봉화|부당|물러서|반드시/.test(cues)?'jun-mature-angry':'jun-mature-weary';
@@ -333,7 +346,7 @@
   }
   var junCrisisCues=/전쟁|전란|왜란|호란|피란|포위|기근|흉년|징발|침공|전투|청군|왜군|일본군|후금군|정유|정묘|병자|사르후|명량|노량|산성|봉화|항복|포로|군량|출정|군역|반란|반정|쿠데타|약탈|전사|부상|불탄|화약|군졸|병졸|죽|굶/;
   var junPeaceOfficeCues=/관아|서리|향리|호적|양안|양전|대동|선혜|문서|장부|세금|조세|공인|공물|방납|도장|수결|계산|기록|토지|납속|공명첩/;
-  var junStableCues=/재건|곡식\s*창고|서당|향촌|속환|교육|가문|장부|구휼계|공동\s*창고|후손|학교|약방|마을|기록/;
+  var junStableCues=/재건|곡식\s*창고|서당|향촌|속환|교육|가문|장부|공동\s*창고|후손|학교|약방|마을|기록/;
   function junCrisisYear(year){return year!==null&&((year>=1592&&year<=1598)||year===1619||year===1624||year===1627||year===1636||year===1637);}
   function resolveJunCrisisPortrait(key,year,cues){
     var age=junAgeBand(year,key);
@@ -357,7 +370,7 @@
     }
     if(key==='yeonhwa'){
       var yeonhwaSpeaker=(String(beat&&beat.name||'')+' '+String(beat&&beat.role||'')).replace(/<[^>]*>/g,' ');
-      if(/서연수|손녀|약방 후계자|속환계 서기/.test(yeonhwaSpeaker))return'yeonsu-young';
+      if(/서연수|손녀|약방 후계자|몸값과 사람 이름을 적는 서기/.test(yeonhwaSpeaker))return'yeonsu-young';
       if(year!==null&&year<=1591)return'yeonhwa-child';
       if(year!==null&&year<=1596)return'yeonhwa-teen';
       if(year!==null&&year>=1640)return'yeonhwa-old';
@@ -398,12 +411,23 @@
   function renderFlow(){
     clearTimer();
     if(run.phase==='intro'){
+      if(run.decisionMarker&&run.decisionMarker.phase==='intro'&&run.decisionMarker.position===run.lineIndex&&!run.decisionDone){renderDecision();return;}
       if(run.lineIndex<run.intro.length){renderLine(run.intro[run.lineIndex]);updateTrack();return;}
-      if(STORY[state.current].decision&&!run.decisionDone){renderDecision();return;}
+      if(STORY[state.current].decision&&!run.decisionMarker&&!run.decisionDone){renderDecision();return;}
       renderDuelIntro();return;
     }
-    if(run.phase==='duel'){renderQuestion();return;}
+    if(run.phase==='duel'){
+      if(run.duelIndex>=run.duelBeats.length){finishDuel(run.foeHp<=0&&run.trust>0);return;}
+      var duelBeat=run.duelBeats[run.duelIndex];
+      if(duelBeat.type==='line'){renderLine(duelBeat);updateTrack();return;}
+      if(duelBeat.type==='decision'){
+        if(run.decisionDone){run.duelIndex++;renderFlow();return;}
+        renderDecision();return;
+      }
+      renderQuestion();return;
+    }
     if(run.phase==='outro'){
+      if(run.decisionMarker&&run.decisionMarker.phase==='outro'&&run.decisionMarker.position===run.lineIndex&&!run.decisionDone){renderDecision();return;}
       if(run.lineIndex<run.outro.length){renderLine(run.outro[run.lineIndex]);updateTrack();return;}completeChapter();
     }
   }
@@ -451,7 +475,10 @@
     if(!option||state.decisions[chapter.no])return;
     state.decisions[chapter.no]=option.id;
     Object.keys(option.effects||{}).forEach(function(key){state.routes[key]=(Number(state.routes[key])||0)+Number(option.effects[key]||0);});
-    saveState();run.pendingDecision=null;run.decisionDone=true;renderDuelIntro();
+    saveState();run.pendingDecision=null;run.decisionDone=true;
+    if(run.phase==='duel'&&run.duelBeats[run.duelIndex]&&run.duelBeats[run.duelIndex].type==='decision'){run.duelIndex++;renderFlow();return;}
+    if(run.decisionMarker){renderFlow();return;}
+    renderDuelIntro();
   }
   function chooseTactic(tactic){
     run.tactic=tactic;if(tactic==='trust')run.statusShield=true;else run.timeBonus=6;renderBriefing();
@@ -461,10 +488,9 @@
     var briefingKey=chapter.no===1?'jun-present':'jun-young';
     setPortrait(resolveLinePortrait({char:briefingKey,text:chapter.summary||'',label:'문제 범위 브리핑'},chapter));
     document.getElementById('briefingTitle').textContent=chapter.evidenceTitle;
-    document.getElementById('briefingSub').textContent=chapter.title+' · 설전 전에 확인할 근거';
+    document.getElementById('briefingSub').textContent=chapter.title+' · 지금까지 장면에서 확인한 배경';
     var body=document.getElementById('briefingBody');body.innerHTML='';
     var items=[{title:'큰 흐름',text:chapter.evidenceText}];
-    run.questions.forEach(function(q){items.push({title:q.fact,text:q.explanation});});
     items.forEach(function(item,index){
       var div=document.createElement('div');div.className='briefing-item';div.innerHTML='<span>'+String(index+1).padStart(2,'0')+'</span><div><b></b><p></p></div>';
       div.querySelector('b').textContent=item.title;div.querySelector('p').textContent=item.text;body.appendChild(div);
@@ -476,7 +502,8 @@
   function baseTime(){return Math.max(18,26-STORY[state.current].act*2);}
   function renderQuestion(reuseCurrent){
     clearTimer();var chapter=STORY[state.current],duel=chapter.duel;
-    var beat=reuseCurrent&&run.currentQuestion?run.currentQuestion:run.questions[run.qCursor++];run.currentQuestion=beat;
+    var beat=reuseCurrent&&run.currentQuestion?run.currentQuestion:run.duelBeats[run.duelIndex];
+    if(!reuseCurrent)run.qCursor++;run.currentQuestion=beat;
     hideStoryCards();quizCard.hidden=false;
     setPortrait(resolveLinePortrait({char:duel.char,name:duel.name,role:duel.role,text:duel.quote},chapter),duel.name,duel.role);
     document.getElementById('quizLabel').textContent='설전 · '+(run.right+run.wrong+1)+'번째 근거 · '+beat.label;
@@ -514,8 +541,9 @@
     document.getElementById('feedbackTitle').textContent=correct?'근거가 남았다 · 상대 고집 −'+Math.ceil(100/run.questions.length):timedOut?'시간 초과 · 생존력 −45':'반박당했다 · 생존력 −45';
     document.getElementById('feedbackText').textContent=(run.replay?'복습 재생 · 명망 변동 없음. ':(correct?'가문 명망 +3. ':'가문 명망 −'+Math.abs(penalty)+'. '))+beat.explanation;
     document.getElementById('feedbackFact').textContent=beat.fact;
-    if(run.foeHp<=0)feedbackMode='win';else if(run.trust<=0||run.qCursor>=run.questions.length)feedbackMode='lose';else feedbackMode='next';
-    feedbackButton.textContent=feedbackMode==='win'?'오늘을 넘긴다':feedbackMode==='lose'?'패배 확인':'다음 근거';feedbackButton.focus({preventScroll:true});
+    var nextBeat=run.duelBeats[run.duelIndex+1];
+    if(run.trust<=0||(!nextBeat&&run.foeHp>0))feedbackMode='lose';else feedbackMode='advance';
+    feedbackButton.textContent=feedbackMode==='lose'?'패배 확인':nextBeat&&nextBeat.type==='line'?'다음 장면':nextBeat&&nextBeat.type==='decision'?'인생 갈림길':nextBeat?'다음 근거':'오늘을 넘긴다';feedbackButton.focus({preventScroll:true});
   }
   function updateDuelHud(){
     document.getElementById('foeBar').style.width=run.foeHp+'%';document.getElementById('foeHp').textContent=run.foeHp+' / 100';
@@ -525,7 +553,7 @@
     clearTimer();if(win){if(!run.replay)state.wins++;run.phase='outro';run.lineIndex=0;saveCheckpoint('outro',0);renderFlow();}else{if(!run.replay)state.losses++;saveCheckpoint('intro',run.intro.length);failChapter();}
   }
   function updateTrack(){
-    var p=run.phase==='intro'?(run.intro.length?run.lineIndex/run.intro.length*32:32):75+(run.outro.length?run.lineIndex/run.outro.length*24:24);
+    var p=run.phase==='intro'?(run.intro.length?run.lineIndex/run.intro.length*32:32):run.phase==='duel'?42+(run.duelBeats.length?run.duelIndex/run.duelBeats.length*33:33):75+(run.outro.length?run.lineIndex/run.outro.length*24:24);
     document.getElementById('chapterTrack').style.width=Math.min(99,Math.round(p))+'%';
   }
   function resultStats(){
@@ -546,7 +574,7 @@
     var chapter=STORY[state.current];screens.end.classList.add('failed');document.querySelector('.end-mark').textContent='死';
     document.getElementById('nextChapterPreview').hidden=true;
     document.getElementById('completeAct').textContent=chapter.act+'막 · '+String(chapter.no).padStart(2,'0')+'장 · 생존 실패';
-    document.getElementById('completeTitle').textContent='연표만으로는 부족했다';
+    document.getElementById('completeTitle').textContent='외운 역사만으로는 부족했다';
     document.getElementById('completeSummary').textContent='서로 다른 세 근거를 모두 지키지 못했다. 다음 장은 해금되지 않는다. 사료 브리핑부터 다시 읽고 재도전해야 한다.';
     document.getElementById('endStats').innerHTML=resultStats();document.getElementById('evidenceTitle').textContent=chapter.evidenceTitle;document.getElementById('evidenceText').textContent=chapter.evidenceText;
     endMode='retry';document.getElementById('nextChapterButton').textContent='브리핑부터 재도전';show('end');
@@ -628,11 +656,11 @@
     show('final');
   }
 
-  nextButton.addEventListener('click',function(){if(run.phase==='intro')run.lineIndex++;else if(run.phase==='outro')run.lineIndex++;saveCheckpoint(run.phase,run.lineIndex);renderFlow();});
+  nextButton.addEventListener('click',function(){if(run.phase==='intro')run.lineIndex++;else if(run.phase==='duel')run.duelIndex++;else if(run.phase==='outro')run.lineIndex++;if(run.phase!=='duel')saveCheckpoint(run.phase,run.lineIndex);renderFlow();});
   Array.prototype.forEach.call(document.querySelectorAll('[data-tactic]'),function(button){button.addEventListener('click',function(){chooseTactic(button.dataset.tactic);});});
   document.getElementById('briefingStartButton').addEventListener('click',beginDuel);
   document.getElementById('decisionContinueButton').addEventListener('click',confirmDecision);
-  feedbackButton.addEventListener('click',function(){if(feedbackMode==='win')finishDuel(true);else if(feedbackMode==='lose')finishDuel(false);else renderQuestion();});
+  feedbackButton.addEventListener('click',function(){if(feedbackMode==='lose'){finishDuel(false);return;}run.duelIndex++;run.currentQuestion=null;run.choiceOrder=null;renderFlow();});
   document.getElementById('startButton').addEventListener('click',startFresh);document.getElementById('continueButton').addEventListener('click',continueStory);
   document.getElementById('mapButton').addEventListener('click',renderMap);document.getElementById('memoryButton').addEventListener('click',function(){openKnowledge('story');});
   document.getElementById('mapKnowledgeButton').addEventListener('click',function(){openKnowledge('map');});document.getElementById('mapHomeButton').addEventListener('click',function(){show('title');});document.getElementById('mapContinueButton').addEventListener('click',continueStory);
