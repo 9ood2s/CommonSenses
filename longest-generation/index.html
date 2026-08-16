@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>최악의 세대 · THE LONGEST GENERATION</title>
+  <meta name="description" content="역덕후 고3 서이준이 임진왜란 전야부터 병자호란 이후까지 62년을 살아남는 12막 48장·144문항 한국사 학습 스토리.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:title" content="최악의 세대 · THE LONGEST GENERATION">
+  <meta property="og:description" content="무쌍도 치트도 없다. 아는 것은 연표뿐. 1588년부터 1650년까지 버텨 낸 한 사람의 생존 기록.">
+  <meta property="og:url" content="https://9ood2s.github.io/CommonSenses/longest-generation/">
+  <meta property="og:image" content="https://9ood2s.github.io/CommonSenses/longest-generation/assets/scenes/title-war.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="preload" as="image" href="assets/characters/jun-present.png?v=20260816-3">
+  <link rel="preload" as="image" href="assets/scenes/title-war.png?v=20260816-3">
+  <link rel="stylesheet" href="styles.css?v=20260816-14">
+</head>
+<body>
+<div class="app">
+  <a class="supapad-ci" href="https://supapad.co" target="_blank" rel="noopener" aria-label="supapad 열기">
+    <svg viewBox="0 0 190 48" role="img" aria-hidden="true">
+      <rect x="1" y="3" width="42" height="42" rx="12" fill="#0d9bb0"/>
+      <path d="M11 31 22 15l11 16M16 25h12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="34" cy="13" r="4.2" fill="#dc8a0f"/>
+      <text x="51" y="34" fill="currentColor" font-family="Pretendard Variable, sans-serif" font-size="28"><tspan font-weight="800">supa</tspan><tspan font-weight="400">pad</tspan></text>
+    </svg>
+  </a>
+
+  <header class="topbar" id="topbar" hidden>
+    <button class="icon-btn" id="mapButton" type="button" aria-label="장 목록"><span></span><span></span><span></span></button>
+    <div class="chapter-id"><b id="actLabel">1막</b><span id="chapterLabel">01</span></div>
+    <div class="reputation"><span>가문 명망</span><b id="reputationCount">30</b></div>
+    <button class="memory" id="memoryButton" type="button"><span>생존 기록</span><b id="memoryCount">0</b><i>/ 144</i></button>
+  </header>
+
+  <main>
+    <section class="screen title-screen" id="titleScreen">
+      <div class="title-copy">
+        <p class="eyebrow">COMMONSENSES 03 · 1588—1650</p>
+        <h1>최악의<br><em>세대</em></h1>
+        <p class="title-en">THE LONGEST GENERATION</p>
+      </div>
+      <div class="title-portrait">
+        <img src="assets/scenes/title-war.png?v=20260816-3" alt="불타는 조선 마을에서 피란민들이 흩어지고 멀리 왜군이 밀려드는 전란의 군상" width="1024" height="1536" loading="eager" decoding="sync">
+      </div>
+      <div class="title-actions">
+        <button class="primary" id="startButton" type="button" disabled>처음부터 살아남기</button>
+        <button class="secondary" id="continueButton" type="button" hidden>이어하기</button>
+        <p class="load-state" id="loadState">시대 기록을 불러오는 중…</p>
+        <button class="text-button" id="sourcesButton" type="button">역사 자료와 창작 안내</button>
+      </div>
+    </section>
+
+    <section class="screen map-screen" id="mapScreen" hidden>
+      <div class="map-head">
+        <p class="eyebrow">CHRONICLE · 62 YEARS</p>
+        <h2>살아남은 연표</h2>
+        <p>완료한 장은 다시 볼 수 있습니다. 패배한 장 다음은 열리지 않습니다.</p>
+      </div>
+      <div class="act-list" id="actList"></div>
+      <div class="map-actions">
+        <button class="secondary" id="mapHomeButton" type="button">표지</button>
+        <button class="secondary knowledge-open" id="mapKnowledgeButton" type="button">생존 기록 복습</button>
+        <button class="primary" id="mapContinueButton" type="button">계속</button>
+      </div>
+    </section>
+
+    <section class="screen knowledge-screen" id="knowledgeScreen" hidden>
+      <div class="knowledge-head">
+        <div><p class="eyebrow">THE REFUGEE LEDGER</p><h2>생존 기록</h2><p>맞힌 근거는 LEARNING, 장을 끝낸 근거는 CLEAR로 남습니다.</p></div>
+        <div class="knowledge-score"><span>기록</span><b id="knowledgeCount">0</b><i>/ 144</i></div>
+      </div>
+      <div class="knowledge-empty" id="knowledgeEmpty"><b>아직 남긴 기록이 없습니다.</b><p>설전에서 근거를 맞히면 이곳에 즉시 기록됩니다.</p></div>
+      <div class="knowledge-list" id="knowledgeList"></div>
+      <div class="knowledge-actions">
+        <button class="secondary" id="knowledgeBackButton" type="button">돌아가기</button>
+        <button class="primary" id="knowledgeContinueButton" type="button">계속 살아남기</button>
+      </div>
+    </section>
+
+    <section class="screen story-screen" id="storyScreen" hidden>
+      <div class="scene-head">
+        <p><span id="sceneDate">1588.02</span> · <span id="scenePlace">경기도 광주</span></p>
+        <h2 id="sceneTitle">연표 밖으로</h2>
+        <span>제 <b id="sceneNo">01</b> 장</span>
+      </div>
+      <div class="story-stage">
+        <figure class="scene-backdrop" id="sceneBackdrop" data-act="1">
+          <img id="sceneBackdropImage" src="assets/scenes/act-01-village.png?v=20260816-3" alt="1588년 향촌 장터에서 양반과 상민, 노비가 서로 거리를 둔 채 오가고 아전이 호적을 펼쳐 든 모습" width="1672" height="941" decoding="async">
+          <figcaption id="sceneBackdropCaption">평온한 장터에도 신분의 거리는 있었다 · 1588—1592</figcaption>
+        </figure>
+        <div class="portrait-shell" id="portraitShell" data-person="jun">
+          <img id="portrait" src="assets/characters/jun-present.png?v=20260816-3" alt="독서실에서 지친 고3 서이준" width="1024" height="1536" decoding="async">
+          <i class="portrait-accent"></i>
+          <div class="portrait-meta"><b id="speaker">서이준</b><span id="speakerRole">역덕후 고3 · 피난민</span></div>
+        </div>
+        <div class="card-host">
+          <article class="dialogue-card" id="dialogueCard">
+            <p class="beat-label" id="beatLabel">SCENE</p>
+            <div class="dialogue-text" id="dialogueText"></div>
+            <button class="next-button" id="nextButton" type="button">계속</button>
+          </article>
+
+          <article class="duel-intro" id="duelIntro" hidden>
+            <p class="duel-kicker" id="duelRole">향촌 유력가의 아들</p>
+            <h3><span id="duelName">류태석</span>이 믿지 않는다</h3>
+            <blockquote id="duelQuote"></blockquote>
+            <div class="duel-rule"><b>이번 장의 생존 조건</b><p>서로 다른 근거 세 개를 모두 맞혀 상대의 고집을 0으로 만든다. 하나라도 놓치면 다음 장은 열리지 않는다.</p></div>
+            <p class="tactic-label">어떻게 버틸 것인가</p>
+            <div class="tactics">
+              <button type="button" data-tactic="trust"><b>장부부터 펼친다</b><span>첫 실수의 명망 벌점 4 감소</span></button>
+              <button type="button" data-tactic="time"><b>연표를 더듬는다</b><span>첫 문제 제한시간 +6초</span></button>
+            </div>
+          </article>
+
+          <article class="decision-card" id="decisionCard" hidden>
+            <p class="beat-label" id="decisionLabel">LIFE CHOICE</p>
+            <h3 id="decisionTitle"></h3>
+            <p class="decision-context" id="decisionContext"></p>
+            <div class="decision-options" id="decisionOptions"></div>
+            <div class="decision-result" id="decisionResult" hidden>
+              <b id="decisionResultTitle"></b>
+              <p id="decisionResultText"></p>
+              <small class="decision-change-hint">확정 전에는 다른 선택을 눌러 바꿀 수 있습니다.</small>
+              <button class="next-button" id="decisionContinueButton" type="button" disabled>이 선택으로 확정</button>
+            </div>
+          </article>
+
+          <article class="briefing-card" id="briefingCard" hidden>
+            <p class="beat-label">머릿속 연표와 사료 대조</p>
+            <h3 id="briefingTitle"></h3>
+            <p class="briefing-sub" id="briefingSub"></p>
+            <div class="briefing-grid" id="briefingBody"></div>
+            <div class="briefing-rule" id="briefingRule"></div>
+            <button class="next-button" id="briefingStartButton" type="button">설전 시작</button>
+          </article>
+
+          <article class="quiz-card" id="quizCard" hidden>
+            <div class="duel-hud">
+              <div><span id="foeStatusName">상대 고집</span><div class="duel-bar foe-bar"><i id="foeBar"></i></div><b id="foeHp">100 / 100</b></div>
+              <em>VS</em>
+              <div><span>주인공 생존력</span><div class="duel-bar trust-bar"><i id="trustBar"></i></div><b id="trustHp">100 / 100</b></div>
+            </div>
+            <div class="quiz-top"><p class="beat-label" id="quizLabel">근거 확인</p><div class="timer-number"><b id="timerNumber">24</b>초</div></div>
+            <div class="timer-track"><i id="timerBar"></i></div>
+            <h3 id="quizPrompt"></h3>
+            <p class="quiz-context" id="quizContext"></p>
+            <div class="choices" id="choices"></div>
+            <div class="feedback" id="feedback" hidden aria-live="polite">
+              <b id="feedbackTitle"></b><p id="feedbackText"></p><small id="feedbackFact"></small>
+              <button class="next-button" id="feedbackButton" type="button">다음</button>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="chapter-track" aria-hidden="true"><span id="chapterTrack"></span></div>
+    </section>
+
+    <section class="screen chapter-end" id="chapterEndScreen" hidden>
+      <div class="end-mark" aria-hidden="true">生</div>
+      <p class="eyebrow" id="completeAct">1막 · 설전 생존</p>
+      <h2 id="completeTitle">오늘은 살았다</h2>
+      <p id="completeSummary"></p>
+      <div class="end-stats" id="endStats"></div>
+      <div class="evidence-card"><span>이번 장의 역사 근거</span><b id="evidenceTitle"></b><p id="evidenceText"></p></div>
+      <div class="next-chapter-preview" id="nextChapterPreview" hidden>
+        <span id="nextChapterMeta">다음 장면</span>
+        <b id="nextChapterTitle"></b>
+        <p id="nextChapterSummary"></p>
+      </div>
+      <button class="primary" id="nextChapterButton" type="button">다음 장</button>
+      <button class="secondary end-knowledge" id="endKnowledgeButton" type="button">생존 기록 복습</button>
+      <button class="text-button" id="endMapButton" type="button">장 목록 보기</button>
+    </section>
+
+    <section class="screen final-screen" id="finalScreen" hidden>
+      <div class="final-visual">
+        <img src="assets/characters/jun-present.png?v=20260816-3" alt="바뀐 현재의 병원에서 눈을 뜬 서이준" width="1024" height="1536" loading="eager" decoding="sync">
+        <span>살아남은 자의 현재</span>
+      </div>
+      <div class="final-copy">
+        <p class="eyebrow" id="finalEyebrow">EPILOGUE · 2026.09.21</p>
+        <h2 id="finalTitle">조상님이<br>도왔다</h2>
+        <p id="finalText">사흘 만에 병원에서 눈을 뜬 이준은 어머니가 보여 준 시조 서준의 초상과 장부에서 일흔 살까지 이어진 삶을 확인했다. 그가 남긴 선택에 따라 집안과 현재의 모습도 달라져 있었다.</p>
+        <blockquote id="finalQuote">“엄마, 그 사람이… 나였어.”</blockquote>
+        <div class="final-score"><span>남긴 생존 기록</span><b id="finalScore">0 / 144</b></div>
+        <div class="final-score"><span>바뀐 가문 명망</span><b id="finalReputation">30</b></div>
+        <button class="secondary" id="finalKnowledgeButton" type="button">생존 기록 복습</button>
+        <button class="primary" id="reviewButton" type="button">연표 다시 보기</button>
+        <button class="secondary" id="restartButton" type="button">기록 지우고 다시 시작</button>
+        <a class="home-link" href="../">CommonSenses 목록으로</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>만든 곳 · <b>supalabs</b></span>
+    <a href="https://supaclass.co" target="_blank" rel="noopener">supaclass.co</a>
+    <a href="https://supapad.co" target="_blank" rel="noopener">supapad.co</a>
+  </footer>
+</div>
+
+<dialog class="info-dialog" id="infoDialog">
+  <form method="dialog">
+    <button class="close-button" aria-label="닫기">×</button>
+    <p class="eyebrow">SOURCES & NOTE</p>
+    <h2>이야기와 역사</h2>
+    <p>서이준·연화·류태석과 각 가문은 모두 가상입니다. ‘최악의 세대’는 임진왜란과 병자호란을 한 생애에 겪은 사람들을 설명하기 위한 서사적 표현이며 공식 역사 용어가 아닙니다. 사건과 제도는 아래 공공 역사 자료를 기준으로 구성했습니다.</p>
+    <ul>
+      <li><a href="https://contents.history.go.kr/mobile/kc/view.do?levelId=kc_r300880" target="_blank" rel="noopener">우리역사넷 · 조선 시대 호적과 호구단자</a></li>
+      <li><a href="https://contents.history.go.kr/mobile/hm/view.do?levelId=hm_079_0010" target="_blank" rel="noopener">우리역사넷 · 일본 통신사와 엇갈린 침략 전망</a></li>
+      <li><a href="https://contents.history.go.kr/mobile/kc/view.do?levelId=kc_i305500" target="_blank" rel="noopener">우리역사넷 · 임진왜란의 전개</a></li>
+      <li><a href="https://contents.history.go.kr/mobile/kc/view.do?levelId=kc_i301100" target="_blank" rel="noopener">우리역사넷 · 공명첩</a></li>
+      <li><a href="https://contents.history.go.kr/front/tg/view.do?ganada=&amp;levelId=tg_003_2630&amp;pageUnit=10&amp;treeId=0209" target="_blank" rel="noopener">우리역사넷 · 속오군</a></li>
+      <li><a href="https://contents.history.go.kr/mobile/nh/view.do?levelId=nh_030_0060_0010_0010_0030" target="_blank" rel="noopener">우리역사넷 · 대동법 시행</a></li>
+      <li><a href="https://contents.history.go.kr/mobile/kc/view.do?levelId=kc_i305600" target="_blank" rel="noopener">우리역사넷 · 광해군 외교와 인조 정권</a></li>
+      <li><a href="https://contents.history.go.kr/eh_kk/teach/notebook/data/19_d06.htm" target="_blank" rel="noopener">우리역사넷 · 최명길의 주화론과 윤집의 척화론</a></li>
+      <li><a href="https://contents.history.go.kr/front/tg/view.do?levelId=tg_003_2820" target="_blank" rel="noopener">우리역사넷 · 주화론과 북벌론</a></li>
+    </ul>
+    <p class="fineprint">단순한 학습용 서사이며 특정 단체의 주장이나 사상을 담지 않았습니다.</p>
+  </form>
+</dialog>
+
+<script src="story.js?v=20260816-14"></script>
+<script src="expansion-base.js?v=20260816-14"></script>
+<script src="expansion-war.js?v=20260816-14"></script>
+<script src="expansion-politics.js?v=20260816-14"></script>
+<script src="expansion-aftermath.js?v=20260816-14"></script>
+<script src="expansion.js?v=20260816-14"></script>
+<script src="scenes.js?v=20260816-14"></script>
+<script src="app.js?v=20260816-14"></script>
+</body>
+</html>
