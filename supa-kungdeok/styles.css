@@ -545,6 +545,7 @@ h1 em { color: var(--red); font-style: normal; }
 .primary-button:active,.secondary-button:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
 .start-status { min-height: 18px; margin: 8px 0 0; color: #a33127; font-size: 11px; line-height: 1.35; text-align: center; }
 .key-help { margin: 12px 0 0; font-size: 11px; text-align: center; }
+.key-help--touch { display: none; }
 
 .result-card {
   position: relative;
@@ -624,7 +625,8 @@ h1 em { color: var(--red); font-style: normal; }
   .game[data-phase="playing"] .living--clouds { animation-duration: 22s; }
 }
 
-@media (max-width: 1100px), (hover: none) and (pointer: coarse) {
+@media (max-width: 1100px), (any-pointer: coarse) {
+  .madang { left: 0; right: 0; }
   .hit-controls {
     left: 0;
     right: 0;
@@ -637,13 +639,23 @@ h1 em { color: var(--red); font-style: normal; }
   .hit-button {
     position: absolute;
     bottom: 0;
-    width: clamp(112px, 16vw, 154px);
+    width: clamp(128px, 22vw, 176px);
     height: 100%;
     min-height: 0;
     pointer-events: auto;
   }
-  .hit-button--kung { left: max(0px, env(safe-area-inset-left)); }
-  .hit-button--deok { right: max(0px, env(safe-area-inset-right)); }
+  .hit-button--kung { left: max(8px, env(safe-area-inset-left)); }
+  .hit-button--deok { right: max(8px, env(safe-area-inset-right)); }
+  .hit-button kbd {
+    min-width: 52px;
+    font-size: 0;
+  }
+  .hit-button kbd::after {
+    content: attr(data-touch-label);
+    font-size: 11px;
+  }
+  .key-help--keyboard { display: none; }
+  .key-help--touch { display: block; }
 }
 
 @media (hover: none) and (pointer: coarse) {

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#213f48" />
     <meta name="description" content="Supapad와 Supaclass가 함께 만든 우리 장단 리듬 게임. 덩·덕·기덕·쿵·더러러러를 두 버튼으로 연주해요." />
     <title>SUPA 쿵덕 | Supapad × Supaclass</title>
-    <link rel="stylesheet" href="./styles.css?v=20260819aa" />
+    <link rel="stylesheet" href="./styles.css?v=20260819ab" />
   </head>
   <body>
     <main id="game" class="game" data-phase="ready">
@@ -67,9 +67,9 @@
           <div class="cast-member cast-member--jing"><div class="sprite sprite--jing"></div><span>징</span></div>
         </div>
         <div class="hit-controls" aria-label="연주 버튼">
-          <button id="kungButton" class="hit-button hit-button--kung" type="button" data-hit="kung"><kbd>F</kbd><strong>쿵</strong><span>북편</span></button>
-          <button id="deokButton" class="hit-button hit-button--deok" type="button" data-hit="deok"><kbd>J</kbd><strong>덕</strong><span>채편</span></button>
-          <p><b>F+J 덩</b> · <b>J×2 기덕</b> · <b>J 길게 더러러러</b></p>
+          <button id="kungButton" class="hit-button hit-button--kung" type="button" data-hit="kung" aria-label="왼손 북편 쿵, 키보드 S" aria-keyshortcuts="S"><kbd data-touch-label="왼손">S</kbd><strong>쿵</strong><span>북편</span></button>
+          <button id="deokButton" class="hit-button hit-button--deok" type="button" data-hit="deok" aria-label="오른손 채편 덕, 키보드 K" aria-keyshortcuts="K"><kbd data-touch-label="오른손">K</kbd><strong>덕</strong><span>채편</span></button>
+          <p><b>S+K 덩</b> · <b>K×2 기덕</b> · <b>K 길게 더러러러</b></p>
         </div>
       </section>
 
@@ -95,7 +95,8 @@
             <a class="practice-link" href="./practice.html">반주 없이 장단 직접 연습하기 <span>→</span></a>
             <button id="startButton" class="primary-button" type="button">공연 시작 <span>▶</span></button>
             <p id="startStatus" class="start-status" role="status" aria-live="polite"></p>
-            <p class="key-help"><kbd>F</kbd> 쿵 · <kbd>J</kbd> 덕 · 함께 덩 · 두 번 기덕 · 길게 더러러러</p>
+            <p class="key-help key-help--keyboard"><kbd>S</kbd> 쿵 · <kbd>K</kbd> 덕 · 함께 덩 · 두 번 기덕 · 길게 더러러러</p>
+            <p class="key-help key-help--touch">왼손 쿵 · 오른손 덕 · 함께 덩 · 오른손 두 번 기덕 · 오른손 길게 더러러러</p>
             <p class="key-help">실제 연주 음원: JICA / K-SOUND LIBRARY · CC BY · 원본 ID 17523, 17529, 17526, 7633, 7595</p>
           </div>
         </div>
@@ -119,6 +120,6 @@
 
       <div id="portraitNotice" class="portrait-notice" aria-hidden="true"><span>↻</span><strong>가로로 돌리면 마당이 더 넓어요</strong></div>
     </main>
-    <script src="./game.js?v=20260819y"></script>
+    <script src="./game.js?v=20260819z"></script>
   </body>
 </html>

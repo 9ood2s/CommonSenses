@@ -561,7 +561,7 @@
     activeRoll = { note, sourceId, startedAt, judgmentAt, active: true };
     rollReleaseLocks.add(sourceId);
     audio.roll(audio.time + 0.055, 3);
-    showFeedback("더러…", "J를 계속 누르고 있어요", "partial");
+    showFeedback("더러…", "채편을 계속 누르고 있어요", "partial");
   }
 
   function armHeldRoll(elapsed) {
@@ -685,7 +685,7 @@
     if (candidate.type === "gideok") {
       if (!candidate.partial) {
         candidate.partial = { sourceId, startedAt: elapsed, taps: 1 };
-        showFeedback("기-", "J를 한 번 더 빠르게!", "partial");
+        showFeedback("기-", "채편을 한 번 더 빠르게!", "partial");
         return;
       }
       const gap = elapsed - candidate.partial.startedAt;
@@ -721,7 +721,7 @@
       activeRoll.active = false;
       activeRoll.note.partial = null;
       activeRoll = null;
-      showFeedback("조금 더!", "더러러러는 J를 길게 눌러요", "wrong");
+      showFeedback("조금 더!", "더러러러는 채편을 길게 눌러요", "wrong");
     }
   }
 
@@ -1196,15 +1196,15 @@
 
     window.addEventListener("keydown", (event) => {
       if (event.repeat || heldKeys.has(event.code)) return;
-      if (!["KeyF", "KeyJ", "ArrowLeft", "ArrowRight"].includes(event.code)) return;
+      if (!["KeyS", "KeyK"].includes(event.code)) return;
       event.preventDefault();
       heldKeys.add(event.code);
-      if (event.code === "KeyF" || event.code === "ArrowLeft") inputDown("kung", `key:${event.code}`, elements.kungButton);
-      if (event.code === "KeyJ" || event.code === "ArrowRight") inputDown("deok", `key:${event.code}`, elements.deokButton);
+      if (event.code === "KeyS") inputDown("kung", `key:${event.code}`, elements.kungButton);
+      if (event.code === "KeyK") inputDown("deok", `key:${event.code}`, elements.deokButton);
     });
     window.addEventListener("keyup", (event) => {
-      if (event.code === "KeyF" || event.code === "ArrowLeft") inputUp("kung", `key:${event.code}`, elements.kungButton);
-      if (event.code === "KeyJ" || event.code === "ArrowRight") inputUp("deok", `key:${event.code}`, elements.deokButton);
+      if (event.code === "KeyS") inputUp("kung", `key:${event.code}`, elements.kungButton);
+      if (event.code === "KeyK") inputUp("deok", `key:${event.code}`, elements.deokButton);
       heldKeys.delete(event.code);
     });
     window.addEventListener("blur", abortAllInputs);

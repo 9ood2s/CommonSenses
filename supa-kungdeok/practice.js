@@ -755,14 +755,14 @@
 
   window.addEventListener("keydown", (event) => {
     if (event.repeat || heldKeys.has(event.code) || event.target instanceof HTMLInputElement) return;
-    const type = event.code === "KeyF" ? "kung" : event.code === "KeyJ" ? "deok" : null;
+    const type = event.code === "KeyS" ? "kung" : event.code === "KeyK" ? "deok" : null;
     if (!type) return;
     event.preventDefault();
     heldKeys.add(event.code);
     inputDown(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad);
   });
   window.addEventListener("keyup", (event) => {
-    const type = event.code === "KeyF" ? "kung" : event.code === "KeyJ" ? "deok" : null;
+    const type = event.code === "KeyS" ? "kung" : event.code === "KeyK" ? "deok" : null;
     if (!type) return;
     inputUp(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad);
     heldKeys.delete(event.code);
