@@ -626,6 +626,16 @@ h1 em { color: var(--red); font-style: normal; }
 }
 
 @media (max-width: 1100px), (any-pointer: coarse) {
+  .playfield {
+    left: 8px;
+    right: 8px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .player-panel { display: none; }
+  .lane-shell {
+    border-left-width: 6px;
+    border-radius: 22px;
+  }
   .madang { left: 0; right: 0; }
   .hit-controls {
     left: 0;

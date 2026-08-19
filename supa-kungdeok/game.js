@@ -6,6 +6,15 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const padScore = (value) => Math.round(value).toString().padStart(7, "0");
 
+  function eventPerformanceTime(timeStamp) {
+    const now = performance.now();
+    let eventTime = Number(timeStamp);
+    if (!Number.isFinite(eventTime) || eventTime <= 0) return now;
+    if (eventTime > now + 60000 && Number.isFinite(performance.timeOrigin)) eventTime -= performance.timeOrigin;
+    if (!Number.isFinite(eventTime) || Math.abs(eventTime - now) > 60000) return now;
+    return Math.min(eventTime, now);
+  }
+
   const COLORS = {
     ink: "#38261f",
     paper: "#fff9e8",
@@ -41,6 +50,9 @@
     deongGapSec: 0.17,
     gideokGapSec: 0.3,
     partialCompletionGraceSec: 0.025,
+    missCommitGraceSec: 0.18,
+    presentationLatencyMaxSec: 0.2,
+    inputEventAgeMaxSec: 0.2,
     perfectMs: 70,
     greatMs: 130,
     rollHoldRatio: 0.6,
@@ -65,7 +77,8 @@
       audioDownbeatSec: 0.681333,
       travelSec: 5.5,
       displayTravelSec: 4.2,
-      phoneDisplayTravelSec: 1.4,
+      compactNoteSpeedPxSec: 220,
+      compactTravelMinSec: 1.5,
       noteScale: 0.92,
       barTimes: [0, 4.595, 9.14, 13.5825, 17.97, 22.346937],
       beatTimes: [
@@ -98,7 +111,8 @@
       audioDownbeatSec: 0.04287,
       travelSec: 5.5,
       displayTravelSec: 2.85,
-      phoneDisplayTravelSec: 1.15,
+      compactNoteSpeedPxSec: 330,
+      compactTravelMinSec: 1.05,
       noteScale: 0.92,
       barTimes: [0, 2.531293, 5.055716, 7.569836, 10.087391, 12.591206, 15.074416, 17.519844, 19.972141, 22.5],
       patterns: [
@@ -119,7 +133,8 @@
       audioDownbeatSec: 0.936333,
       travelSec: 5.5,
       displayTravelSec: 2.45,
-      phoneDisplayTravelSec: 1,
+      compactNoteSpeedPxSec: 390,
+      compactTravelMinSec: 0.9,
       noteScale: 0.92,
       barTimes: [0, 2.25, 4.455, 6.655, 8.88, 11.17, 13.39, 15.6, 17.945, 20.355, 22.61, 24.785],
       patterns: [
@@ -161,6 +176,33 @@
     }
 
     get time() { return this.context ? this.context.currentTime : 0; }
+
+    presentationTimeAt(performanceTime = performance.now()) {
+      if (!this.context) return 0;
+      const contextNow = this.time;
+      const performanceNow = performance.now();
+      const eventAgeSec = clamp((performanceNow - performanceTime) / 1000, 0, TIMING_POLICY.inputEventAgeMaxSec);
+      const boundedPerformanceTime = performanceNow - eventAgeSec * 1000;
+      let mappedTime = contextNow - eventAgeSec;
+      let hasOutputTimestamp = false;
+      try {
+        const output = this.context.getOutputTimestamp?.();
+        if (Number.isFinite(output?.contextTime) && Number.isFinite(output?.performanceTime)) {
+          const outputMappedTime = output.contextTime + (boundedPerformanceTime - output.performanceTime) / 1000;
+          if (outputMappedTime <= contextNow + 0.05 && outputMappedTime >= contextNow - 1) {
+            mappedTime = outputMappedTime;
+            hasOutputTimestamp = true;
+          }
+        }
+      } catch (_) { /* older browsers may expose but not implement getOutputTimestamp */ }
+      if (!hasOutputTimestamp) {
+        const reportedLatency = Number.isFinite(this.context.outputLatency)
+          ? this.context.outputLatency
+          : Number.isFinite(this.context.baseLatency) ? this.context.baseLatency : 0;
+        mappedTime -= clamp(reportedLatency, 0, TIMING_POLICY.presentationLatencyMaxSec);
+      }
+      return clamp(mappedTime, contextNow - TIMING_POLICY.presentationLatencyMaxSec - eventAgeSec, contextNow + 0.01);
+    }
 
     async load(keys) {
       if (window.location.protocol === "file:") {
@@ -299,8 +341,10 @@
   const heldKeys = new Set();
   const heldInputs = { kung: new Map(), deok: new Map() };
   const rollReleaseLocks = new Set();
+  const animationRestartFrames = new Map();
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const hiddenLivingBeatActors = window.matchMedia("(max-height: 650px) and (orientation: landscape)");
+  const compactVisualLayout = window.matchMedia("(any-pointer: coarse)");
   let animationFrame = 0;
   let heroTimer = 0;
   let impactTimer = 0;
@@ -314,6 +358,27 @@
   let canvasHeight = 1;
   let dpr = 1;
   let lastDrawAt = 0;
+
+  function stopAnimationRestart(element, classNames = []) {
+    const pendingFrame = animationRestartFrames.get(element);
+    if (pendingFrame) cancelAnimationFrame(pendingFrame);
+    animationRestartFrames.delete(element);
+    classNames.forEach((className) => element.classList.remove(className));
+  }
+
+  function restartAnimationClass(element, className, classNames = [className]) {
+    stopAnimationRestart(element, classNames);
+    const frameId = requestAnimationFrame(() => {
+      animationRestartFrames.delete(element);
+      element.classList.add(className);
+    });
+    animationRestartFrames.set(element, frameId);
+  }
+
+  function clearAnimationRestarts() {
+    for (const frameId of animationRestartFrames.values()) cancelAnimationFrame(frameId);
+    animationRestartFrames.clear();
+  }
 
   const state = {
     phase: "ready",
@@ -436,6 +501,7 @@
     });
     particles.length = 0;
     rings.length = 0;
+    clearAnimationRestarts();
     elements.ribbonLayer.replaceChildren();
     window.clearTimeout(impactTimer);
     window.clearTimeout(comboBurstTimer);
@@ -501,12 +567,12 @@
   }
 
   function frame() {
-    const now = audio.time;
+    const now = audio.presentationTimeAt();
     const elapsed = now - state.songStart;
     if (state.phase === "countIn") updateCountdown(now);
     if (state.phase === "playing") {
       armHeldRoll(elapsed);
-      updateActiveRoll(elapsed);
+      updateActiveRoll();
       markMisses(elapsed);
       updateBeat(elapsed);
       if (elapsed > state.runDuration + 1.15) finishGame();
@@ -522,15 +588,19 @@
       lastCountdown = display;
       elements.countdownValue.textContent = String(display);
       elements.countdownValue.style.animation = "none";
-      void elements.countdownValue.offsetWidth;
-      elements.countdownValue.style.animation = "";
+      requestAnimationFrame(() => { elements.countdownValue.style.animation = ""; });
     }
     if (now >= state.songStart) {
-      state.phase = "playing";
-      elements.game.dataset.phase = "playing";
-      elements.countdown.setAttribute("aria-hidden", "true");
-      showFeedback("시작!", "장단을 타요", "perfect");
+      enterPlaying();
     }
+  }
+
+  function enterPlaying() {
+    if (state.phase === "playing") return;
+    state.phase = "playing";
+    elements.game.dataset.phase = "playing";
+    elements.countdown.setAttribute("aria-hidden", "true");
+    showFeedback("시작!", "장단을 타요", "perfect");
   }
 
   function updateBeat(elapsed) {
@@ -544,21 +614,18 @@
     lastBeat = beat;
     if (reducedMotion.matches) return;
     const livingBeatActors = hiddenLivingBeatActors.matches ? [] : [elements.livingTiger, elements.livingDeer];
-    elements.beatWash.classList.remove("is-on");
-    livingBeatActors.forEach((element) => element.classList.remove("is-beat"));
-    void elements.game.offsetWidth;
-    elements.beatWash.classList.add("is-on");
-    livingBeatActors.forEach((element) => element.classList.add("is-beat"));
+    restartAnimationClass(elements.beatWash, "is-on");
+    livingBeatActors.forEach((element) => restartAnimationClass(element, "is-beat"));
   }
 
   function requiredRollHoldSec(note) {
     return clamp(note.holdSec * TIMING_POLICY.rollHoldRatio, TIMING_POLICY.rollHoldMinSec, TIMING_POLICY.rollHoldMaxSec);
   }
 
-  function beginRoll(note, sourceId, startedAt, judgmentAt = startedAt) {
+  function beginRoll(note, sourceId, startedAt, judgmentAt = startedAt, holdStartedAtMs = performance.now()) {
     if (note.judged || activeRoll?.active || rollReleaseLocks.has(sourceId)) return;
     note.partial = { active: true, sourceId, startedAt, judgmentAt };
-    activeRoll = { note, sourceId, startedAt, judgmentAt, active: true };
+    activeRoll = { note, sourceId, startedAt, judgmentAt, holdStartedAtMs, active: true };
     rollReleaseLocks.add(sourceId);
     audio.roll(audio.time + 0.055, 3);
     showFeedback("더러…", "채편을 계속 누르고 있어요", "partial");
@@ -572,20 +639,21 @@
       && elapsed <= note.time + TIMING_POLICY.rollInputWindowSec
     ));
     if (!candidate) return;
-    const owner = [...heldInputs.deok.entries()].find(([sourceId, sourceStartedAt]) => (
+    const owner = [...heldInputs.deok.entries()].find(([sourceId, sourceTiming]) => (
       !rollReleaseLocks.has(sourceId)
-      && sourceStartedAt >= candidate.time - TIMING_POLICY.rollEarlyArmMaxSec
+      && sourceTiming.contextElapsed >= candidate.time - TIMING_POLICY.rollEarlyArmMaxSec
     ));
     if (!owner) return;
-    const [sourceId, sourceStartedAt] = owner;
-    const startedAt = Math.max(sourceStartedAt, candidate.time - TIMING_POLICY.rollInputWindowSec);
-    const judgmentAt = Math.max(sourceStartedAt, candidate.time - TIMING_POLICY.inputWindowSec);
-    beginRoll(candidate, sourceId, startedAt, judgmentAt);
+    const [sourceId, sourceTiming] = owner;
+    const startedAt = Math.max(sourceTiming.contextElapsed, candidate.time - TIMING_POLICY.rollInputWindowSec);
+    const judgmentAt = Math.max(sourceTiming.contextElapsed, candidate.time - TIMING_POLICY.inputWindowSec);
+    const holdStartedAtMs = sourceTiming.performanceTime + Math.max(0, startedAt - sourceTiming.contextElapsed) * 1000;
+    beginRoll(candidate, sourceId, startedAt, judgmentAt, holdStartedAtMs);
   }
 
-  function updateActiveRoll(elapsed) {
+  function updateActiveRoll() {
     if (!activeRoll || activeRoll.note.judged || !activeRoll.active) return;
-    if (elapsed - activeRoll.startedAt >= requiredRollHoldSec(activeRoll.note)) {
+    if ((performance.now() - activeRoll.holdStartedAtMs) / 1000 >= requiredRollHoldSec(activeRoll.note)) {
       const note = activeRoll.note;
       activeRoll.active = false;
       judge(note, activeRoll.judgmentAt - note.time, false);
@@ -598,17 +666,19 @@
     for (const note of state.chart) {
       if (note.decorative || note.judged) continue;
       if (note.type === "roll" && note.partial?.active) continue;
-      let missDeadline = note.time + (note.type === "roll" ? TIMING_POLICY.rollMissWindowSec : TIMING_POLICY.missWindowSec);
+      let missDeadline = note.time
+        + (note.type === "roll" ? TIMING_POLICY.rollMissWindowSec : TIMING_POLICY.missWindowSec)
+        + TIMING_POLICY.missCommitGraceSec;
       if (note.type === "deong" && note.partial) {
         missDeadline = Math.max(
-          note.time + TIMING_POLICY.deongPartialMissWindowSec,
-          note.partial.time + TIMING_POLICY.deongGapSec + TIMING_POLICY.partialCompletionGraceSec,
+          note.time + TIMING_POLICY.deongPartialMissWindowSec + TIMING_POLICY.missCommitGraceSec,
+          note.partial.time + TIMING_POLICY.deongGapSec + TIMING_POLICY.partialCompletionGraceSec + TIMING_POLICY.missCommitGraceSec,
         );
       }
       if (note.type === "gideok" && note.partial) {
         missDeadline = Math.max(
-          note.time + TIMING_POLICY.gideokPartialMissWindowSec,
-          note.partial.startedAt + TIMING_POLICY.gideokGapSec + TIMING_POLICY.partialCompletionGraceSec,
+          note.time + TIMING_POLICY.gideokPartialMissWindowSec + TIMING_POLICY.missCommitGraceSec,
+          note.partial.startedAt + TIMING_POLICY.gideokGapSec + TIMING_POLICY.partialCompletionGraceSec + TIMING_POLICY.missCommitGraceSec,
         );
       }
       if (elapsed <= missDeadline) continue;
@@ -635,13 +705,14 @@
     return ({ deong: "덩", deok: "덕", gideok: "기덕", kung: "쿵", roll: "더러러러" })[type] || "장구 구음";
   }
 
-  function press(type, sourceId, startedAt) {
+  function press(type, sourceId, inputTiming) {
     animateHero(type);
     if (!audio.context) return;
     if (type === "kung") audio.kung(); else audio.deok();
+    const elapsed = inputTiming.contextElapsed;
+    if (state.phase === "countIn" && elapsed >= 0) enterPlaying();
     if (state.phase !== "playing") return;
 
-    const elapsed = startedAt;
     let candidate = null;
     let smallest = Infinity;
     for (const note of state.chart) {
@@ -694,23 +765,22 @@
         showFeedback("기-", "두 타격을 더 가깝게", "partial");
         return;
       }
-      judge(candidate, elapsed - candidate.time, false);
+      judge(candidate, candidate.partial.startedAt - candidate.time, false);
       showFeedback("기덕!", "앞꾸밈과 채가 붙었어요", "perfect");
       return;
     }
 
     if (candidate.type === "roll") {
-      beginRoll(candidate, sourceId, elapsed);
+      beginRoll(candidate, sourceId, elapsed, elapsed, inputTiming.performanceTime);
       return;
     }
 
     judge(candidate, elapsed - candidate.time, false);
   }
 
-  function release(type, sourceId) {
+  function release(type, sourceId, releasedAtMs = performance.now()) {
     if (type !== "deok" || !activeRoll || activeRoll.sourceId !== sourceId || !activeRoll.active || activeRoll.note.judged) return;
-    const elapsed = audio.time - state.songStart;
-    const heldFor = elapsed - activeRoll.startedAt;
+    const heldFor = Math.max(0, releasedAtMs - activeRoll.holdStartedAtMs) / 1000;
     if (heldFor + TIMING_POLICY.rollReleaseGraceSec >= requiredRollHoldSec(activeRoll.note)) {
       const note = activeRoll.note;
       activeRoll.active = false;
@@ -738,21 +808,25 @@
     }
   }
 
-  function inputDown(type, sourceId, sourceElement) {
+  function inputDown(type, sourceId, sourceElement, timeStamp) {
     const sources = heldInputs[type];
     if (sources.has(sourceId)) return;
-    const startedAt = audio.context ? audio.time - state.songStart : -Infinity;
-    sources.set(sourceId, startedAt);
+    const performanceTime = eventPerformanceTime(timeStamp);
+    const inputTiming = {
+      contextElapsed: audio.context ? audio.presentationTimeAt(performanceTime) - state.songStart : -Infinity,
+      performanceTime,
+    };
+    sources.set(sourceId, inputTiming);
     sourceElement?.classList.add("is-pressed");
-    press(type, sourceId, startedAt);
+    press(type, sourceId, inputTiming);
   }
 
-  function inputUp(type, sourceId, sourceElement) {
+  function inputUp(type, sourceId, sourceElement, timeStamp) {
     const sources = heldInputs[type];
     if (!sources.has(sourceId)) return;
     sources.delete(sourceId);
     if (type === "deok") {
-      release(type, sourceId);
+      release(type, sourceId, eventPerformanceTime(timeStamp));
       rollReleaseLocks.delete(sourceId);
     }
     if (sources.size === 0) sourceElement?.classList.remove("is-pressed");
@@ -826,9 +900,7 @@
   function showFeedback(title, detail, kind) {
     elements.judgment.textContent = title;
     elements.judgment.dataset.kind = kind;
-    elements.judgment.classList.remove("show");
-    void elements.judgment.offsetWidth;
-    elements.judgment.classList.add("show");
+    restartAnimationClass(elements.judgment, "show");
     elements.timing.textContent = detail;
   }
 
@@ -836,9 +908,7 @@
     if (reducedMotion.matches) return;
     const heavy = combined || result === "perfect" || state.combo % 10 === 0;
     window.clearTimeout(impactTimer);
-    elements.game.classList.remove("impact-hit", "impact-heavy");
-    void elements.game.offsetWidth;
-    elements.game.classList.add(heavy ? "impact-heavy" : "impact-hit");
+    restartAnimationClass(elements.game, heavy ? "impact-heavy" : "impact-hit", ["impact-hit", "impact-heavy"]);
     impactTimer = window.setTimeout(() => elements.game.classList.remove("impact-hit", "impact-heavy"), heavy ? 260 : 150);
   }
 
@@ -848,9 +918,7 @@
     strong.textContent = String(state.combo);
     label.textContent = state.combo >= 30 ? "신명나는 이어치기!" : state.combo >= 20 ? "장단이 이어져요!" : "이어치기!";
     window.clearTimeout(comboBurstTimer);
-    elements.comboBurst.classList.remove("show");
-    void elements.comboBurst.offsetWidth;
-    elements.comboBurst.classList.add("show");
+    restartAnimationClass(elements.comboBurst, "show");
     comboBurstTimer = window.setTimeout(() => elements.comboBurst.classList.remove("show"), 900);
   }
 
@@ -861,15 +929,15 @@
     elements.gauge.style.width = `${energy}%`;
     elements.combo.querySelector("strong").textContent = state.combo;
     elements.game.dataset.comboTier = state.combo >= 30 ? "3" : state.combo >= 20 ? "2" : state.combo >= 10 ? "1" : "0";
-    elements.combo.classList.remove("pulse");
-    void elements.combo.offsetWidth;
-    if (state.combo > 0) elements.combo.classList.add("pulse");
+    if (state.combo > 0) restartAnimationClass(elements.combo, "pulse");
+    else stopAnimationRestart(elements.combo, ["pulse"]);
     elements.perfectMini.textContent = `반짝 ${state.perfect}`;
     elements.missMini.textContent = `놓침 ${state.miss}`;
   }
 
   function finishGame() {
     abortAllInputs();
+    clearAnimationRestarts();
     state.phase = "result";
     elements.game.dataset.phase = "result";
     elements.livingTiger.classList.remove("is-beat");
@@ -921,7 +989,7 @@
   }
 
   function spawnHitEffect(note, result, combined) {
-    const position = notePosition(note, audio.time);
+    const position = notePosition(note, audio.presentationTimeAt());
     const milestone = state.combo > 0 && state.combo % 10 === 0;
     const count = result === "perfect" ? 18 : result === "great" ? 12 : 8;
     const palette = combined ? [COLORS.teal, COLORS.red, COLORS.gold, COLORS.jade] : note.type === "kung" ? [COLORS.teal, COLORS.jade, COLORS.gold] : [COLORS.red, COLORS.gold, COLORS.ivory];
@@ -937,7 +1005,7 @@
   }
 
   function spawnMissEffect(note) {
-    const position = notePosition(note, audio.time);
+    const position = notePosition(note, audio.presentationTimeAt());
     rings.push({ x: position.x, y: position.y, age: 0, life: 0.45, color: "#7d7068", max: 55, dashed: true });
     while (rings.length > 12) rings.shift();
   }
@@ -969,14 +1037,21 @@
 
   function visualTravelSec() {
     const displayTravel = selectedSong.displayTravelSec || selectedSong.travelSec;
-    if (canvasWidth < 520) return selectedSong.phoneDisplayTravelSec || Math.min(displayTravel, 1.5);
-    return canvasWidth < 900 ? Math.min(displayTravel, 4.3) : displayTravel;
+    if (!compactVisualLayout.matches && canvasWidth >= 900) return displayTravel;
+    const travelDistance = canvasWidth + 70 - hitLineX();
+    const pixelsPerSecond = selectedSong.compactNoteSpeedPxSec || 260;
+    const minimumTravel = selectedSong.compactTravelMinSec || 0.9;
+    return Math.min(displayTravel, Math.max(minimumTravel, travelDistance / pixelsPerSecond));
+  }
+
+  function hitLineX() {
+    return canvasWidth < 520 ? 78 : Math.max(105, canvasWidth * 0.12);
   }
 
   function notePosition(note, now) {
     const travel = visualTravelSec();
     const targetTime = state.songStart + note.time;
-    const hitX = Math.max(105, canvasWidth * 0.12);
+    const hitX = hitLineX();
     const farX = canvasWidth + 70;
     const x = hitX + ((targetTime - now) / travel) * (farX - hitX);
     return { x, y: canvasHeight * 0.63, hitX };
@@ -1007,7 +1082,7 @@
     }
     if (state.songStart) {
       const travel = visualTravelSec();
-      const hitX = Math.max(105, canvasWidth * 0.12);
+      const hitX = hitLineX();
       const farX = canvasWidth + 70;
       for (const beat of state.beatGrid) {
         const at = state.songStart + beat.time;
@@ -1025,7 +1100,7 @@
   }
 
   function drawHitFlower(now) {
-    const x = Math.max(105, canvasWidth * 0.12);
+    const x = hitLineX();
     const y = canvasHeight * 0.63;
     const isRunning = state.phase === "countIn" || state.phase === "playing";
     const beatPhase = isRunning ? getBeatPhase(now - state.songStart) : 1;
@@ -1199,12 +1274,12 @@
       if (!["KeyS", "KeyK"].includes(event.code)) return;
       event.preventDefault();
       heldKeys.add(event.code);
-      if (event.code === "KeyS") inputDown("kung", `key:${event.code}`, elements.kungButton);
-      if (event.code === "KeyK") inputDown("deok", `key:${event.code}`, elements.deokButton);
+      if (event.code === "KeyS") inputDown("kung", `key:${event.code}`, elements.kungButton, event.timeStamp);
+      if (event.code === "KeyK") inputDown("deok", `key:${event.code}`, elements.deokButton, event.timeStamp);
     });
     window.addEventListener("keyup", (event) => {
-      if (event.code === "KeyS") inputUp("kung", `key:${event.code}`, elements.kungButton);
-      if (event.code === "KeyK") inputUp("deok", `key:${event.code}`, elements.deokButton);
+      if (event.code === "KeyS") inputUp("kung", `key:${event.code}`, elements.kungButton, event.timeStamp);
+      if (event.code === "KeyK") inputUp("deok", `key:${event.code}`, elements.deokButton, event.timeStamp);
       heldKeys.delete(event.code);
     });
     window.addEventListener("blur", abortAllInputs);
@@ -1213,9 +1288,9 @@
       button.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         try { button.setPointerCapture?.(event.pointerId); } catch (_) { /* pointer capture is an enhancement */ }
-        inputDown(type, `pointer:${event.pointerId}`, button);
+        inputDown(type, `pointer:${event.pointerId}`, button, event.timeStamp);
       });
-      const releasePointer = (event) => inputUp(type, `pointer:${event.pointerId}`, button);
+      const releasePointer = (event) => inputUp(type, `pointer:${event.pointerId}`, button, event.timeStamp);
       const cancelPointer = (event) => inputCancel(type, `pointer:${event.pointerId}`, button);
       button.addEventListener("pointerup", releasePointer);
       button.addEventListener("pointercancel", cancelPointer);
@@ -1223,8 +1298,8 @@
     });
     const releasePointerAnywhere = (event) => {
       const sourceId = `pointer:${event.pointerId}`;
-      inputUp("kung", sourceId, elements.kungButton);
-      inputUp("deok", sourceId, elements.deokButton);
+      inputUp("kung", sourceId, elements.kungButton, event.timeStamp);
+      inputUp("deok", sourceId, elements.deokButton, event.timeStamp);
     };
     const cancelPointerAnywhere = (event) => {
       const sourceId = `pointer:${event.pointerId}`;
