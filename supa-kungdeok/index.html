@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#213f48" />
+    <meta name="description" content="Supapad와 Supaclass가 함께 만든 우리 장단 리듬 게임. 덩·덕·기덕·쿵·더러러러를 두 버튼으로 연주해요." />
+    <title>SUPA 쿵덕 | Supapad × Supaclass</title>
+    <link rel="stylesheet" href="./styles.css?v=20260819aa" />
+  </head>
+  <body>
+    <main id="game" class="game" data-phase="ready">
+      <div class="stage-bg" aria-hidden="true"></div>
+      <div class="living-scene" aria-hidden="true">
+        <img class="living living--clouds" src="./assets/minhwa/minhwa-clouds.png" alt="" width="357" height="143" draggable="false" />
+        <img class="living living--pine" src="./assets/minhwa/minhwa-pine.png" alt="" width="324" height="425" draggable="false" />
+        <img class="living living--waves" src="./assets/minhwa/minhwa-waves.png" alt="" width="354" height="175" draggable="false" />
+        <img id="livingTiger" class="living living--tiger" src="./assets/minhwa/minhwa-tiger.png" alt="" width="324" height="362" draggable="false" />
+        <img class="living living--dragon" src="./assets/minhwa/minhwa-dragon.png" alt="" width="349" height="438" draggable="false" />
+        <img class="living living--cranes" src="./assets/minhwa/minhwa-cranes.png" alt="" width="354" height="366" draggable="false" />
+        <img id="livingDeer" class="living living--deer" src="./assets/minhwa/minhwa-deer.png" alt="" width="302" height="369" draggable="false" />
+        <img class="living living--turtle" src="./assets/minhwa/minhwa-turtle.png" alt="" width="322" height="197" draggable="false" />
+      </div>
+      <div id="beatWash" class="beat-wash" aria-hidden="true"></div>
+      <div id="ribbonLayer" class="ribbon-layer" aria-hidden="true"></div>
+      <div id="comboBurst" class="combo-burst" aria-hidden="true"><strong>10</strong><span>이어치기!</span></div>
+
+      <header class="topbar">
+        <div class="logo-lockup">
+          <span class="logo-lockup__seal">S</span>
+          <div><strong>SUPA 쿵덕</strong><small>by SUPALABS</small></div>
+        </div>
+        <div class="song-info">
+          <span id="songBadge" class="song-info__badge">첫 마당</span>
+          <div><strong id="songTitle">굿거리 기본형</strong><span id="songMeta">굿거리 · 12/8 · 실연 평균 ♩.=53.7</span></div>
+        </div>
+        <div class="score-box">
+          <div class="score-box__gauge" aria-label="신명 게이지">
+            <span>신명</span><div><i id="gaugeFill"></i></div>
+          </div>
+          <div class="score-box__number"><span>점수</span><strong id="scoreValue">0000000</strong></div>
+          <button id="soundButton" class="round-button" type="button" aria-label="소리 끄기" aria-pressed="false">♪</button>
+          <button id="fullscreenButton" class="round-button" type="button" aria-label="전체 화면">⛶</button>
+        </div>
+      </header>
+
+      <section class="playfield" aria-label="장구 연주 레인">
+        <aside class="player-panel" aria-label="북편과 채편 캐릭터">
+          <div class="player-panel__label">북편 · 채편</div>
+          <div id="heroCharacter" class="sprite sprite--janggu" role="img" aria-label="몸통과 팔다리 없이 함께 떠다니는 북편과 채편 캐릭터"></div>
+          <div class="player-panel__hits"><span id="perfectMini">반짝 0</span><span id="missMini">놓침 0</span></div>
+        </aside>
+        <div class="lane-shell">
+          <div class="lane-shell__frame" aria-hidden="true"></div>
+          <canvas id="gameCanvas" aria-label="오른쪽에서 왼쪽 판정선으로 오는 덩, 덕, 기덕, 쿵, 더러러러 노트와 악보 기호"></canvas>
+          <div class="notation-key" aria-hidden="true"><span><b>♩.</b> 한 박</span><span><b>♪</b> 한 소박</span><span><b>♫</b> 기덕</span><span><b>♬</b> 굴림</span></div>
+          <div id="judgment" class="judgment" aria-live="polite">준비!</div>
+          <div id="timingHint" class="timing-hint">덩·덕·기덕·쿵·더러러러의 타이밍을 맞춰요</div>
+          <div id="combo" class="combo"><strong>0</strong><span>이어치기</span></div>
+        </div>
+      </section>
+
+      <section class="madang" aria-label="악기 캐릭터 공연 무대">
+        <div class="support-cast" aria-hidden="true">
+          <div class="cast-member cast-member--sogo"><div class="sprite sprite--sogo"></div><span>소고</span></div>
+          <div class="cast-member cast-member--kkwaeng"><div class="sprite sprite--kkwaeng"></div><span>꽹과리</span></div>
+          <div class="cast-member cast-member--jing"><div class="sprite sprite--jing"></div><span>징</span></div>
+        </div>
+        <div class="hit-controls" aria-label="연주 버튼">
+          <button id="kungButton" class="hit-button hit-button--kung" type="button" data-hit="kung"><kbd>F</kbd><strong>쿵</strong><span>북편</span></button>
+          <button id="deokButton" class="hit-button hit-button--deok" type="button" data-hit="deok"><kbd>J</kbd><strong>덕</strong><span>채편</span></button>
+          <p><b>F+J 덩</b> · <b>J×2 기덕</b> · <b>J 길게 더러러러</b></p>
+        </div>
+      </section>
+
+      <div id="countdown" class="countdown" aria-hidden="true"><span>덩</span></div>
+
+      <section id="startOverlay" class="overlay overlay--open" aria-labelledby="mainTitle">
+        <div class="start-card">
+          <div class="start-card__hero" aria-hidden="true"><div class="sprite sprite--janggu sprite--cheer"></div></div>
+          <div class="start-card__content">
+            <p class="eyebrow"><b>by SUPALABS</b> Supapad × Supaclass가 함께 만든 우리 장단 놀이</p>
+            <h1 id="mainTitle"><span>SUPA</span> <em>쿵덕</em></h1>
+            <nav class="brand-links" aria-label="SUPALABS 서비스 바로가기">
+              <a href="https://supapad.co" target="_blank" rel="noreferrer" aria-label="Supapad 새 탭에서 열기"><span>Supapad</span><strong>supapad.co ↗</strong></a>
+              <a href="https://supaclass.co" target="_blank" rel="noreferrer" aria-label="Supaclass 새 탭에서 열기"><span>Supaclass</span><strong>supaclass.co ↗</strong></a>
+            </nav>
+            <p class="lead">노트 위의 음표와 구음을 함께 보며<br /><b>덩·덕·기덕·쿵·더러러러</b>를 연주해요.</p>
+            <fieldset class="stage-picker">
+              <legend>한마당 고르기</legend>
+              <button class="stage-choice is-selected" type="button" data-song="gutgeori"><span>하나</span><strong>굿거리 기본형</strong><small>덩-기덕 / 쿵 더러러러 · 느린 실연</small></button>
+              <button class="stage-choice" type="button" data-song="madangsamchae"><span>둘</span><strong>삼채 장단 연습</strong><small>덩-- / 덩-- / 덩-덕 / 쿵덕- · 표준악보집 첫 제시형</small></button>
+              <button class="stage-choice" type="button" data-song="jajinmori"><span>셋</span><strong>자진모리 변형</strong><small>덩-덕 / 쿵덕- / 쿵-덕 / 쿵덕- · 〈이어도사나〉 적합형</small></button>
+            </fieldset>
+            <a class="practice-link" href="./practice.html">반주 없이 장단 직접 연습하기 <span>→</span></a>
+            <button id="startButton" class="primary-button" type="button">공연 시작 <span>▶</span></button>
+            <p id="startStatus" class="start-status" role="status" aria-live="polite"></p>
+            <p class="key-help"><kbd>F</kbd> 쿵 · <kbd>J</kbd> 덕 · 함께 덩 · 두 번 기덕 · 길게 더러러러</p>
+            <p class="key-help">실제 연주 음원: JICA / K-SOUND LIBRARY · CC BY · 원본 ID 17523, 17529, 17526, 7633, 7595</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultOverlay" class="overlay" aria-labelledby="resultTitle" aria-hidden="true">
+        <div class="result-card">
+          <div id="resultStamp" class="result-stamp">얼쑤!</div>
+          <p class="eyebrow">한마당을 마쳤어요</p>
+          <h2 id="resultTitle">장단이 고르게 이어졌어요</h2>
+          <div class="result-score"><span>점수</span><strong id="resultScore">0000000</strong></div>
+          <dl class="result-stats">
+            <div><dt>반짝!</dt><dd id="perfectCount">0</dd></div><div><dt>좋아!</dt><dd id="greatCount">0</dd></div>
+            <div><dt>맞았어요</dt><dd id="goodCount">0</dd></div><div><dt>놓침</dt><dd id="missCount">0</dd></div>
+            <div><dt>최대 이어치기</dt><dd id="maxComboCount">0</dd></div><div><dt>박의 고름</dt><dd id="steadinessValue">--</dd></div>
+          </dl>
+          <p id="resultNote" class="result-note">다섯 장구 구음의 자리를 잘 구별했어요.</p>
+          <div class="result-actions"><button id="retryButton" class="primary-button" type="button">다시 치기</button><button id="chooseButton" class="secondary-button" type="button">다른 장단</button></div>
+        </div>
+      </section>
+
+      <div id="portraitNotice" class="portrait-notice" aria-hidden="true"><span>↻</span><strong>가로로 돌리면 마당이 더 넓어요</strong></div>
+    </main>
+    <script src="./game.js?v=20260819y"></script>
+  </body>
+</html>
