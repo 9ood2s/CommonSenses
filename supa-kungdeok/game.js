@@ -670,31 +670,56 @@
       const note = activeRoll.note;
       activeRoll.active = false;
       judge(note, activeRoll.judgmentAt - note.time, false);
-      showFeedback("더러러러!", "채편 굴림이 이어졌어요", "perfect");
       activeRoll = null;
     }
+  }
+
+  function compoundCompletionDeadline(note) {
+    if (note.type === "deong" && note.partial) return note.partial.time + TIMING_POLICY.deongGapSec;
+    if (note.type === "gideok" && note.partial) return note.partial.startedAt + TIMING_POLICY.gideokGapSec;
+    return -Infinity;
+  }
+
+  function canCompleteCompoundNote(note, input, elapsed) {
+    if (!note.partial) return false;
+    if (note.type === "deong") {
+      const gap = elapsed - note.partial.time;
+      return note.partial.type !== input
+        && gap >= -TIMING_EPSILON_SEC
+        && elapsed <= compoundCompletionDeadline(note) + TIMING_EPSILON_SEC;
+    }
+    if (note.type === "gideok") {
+      const gap = elapsed - note.partial.startedAt;
+      return input === "deok"
+        && gap >= -TIMING_EPSILON_SEC
+        && elapsed <= compoundCompletionDeadline(note) + TIMING_EPSILON_SEC;
+    }
+    return false;
+  }
+
+  function missCommitDeadline(note) {
+    const missWindow = note.type === "roll" ? TIMING_POLICY.rollMissWindowSec : TIMING_POLICY.missWindowSec;
+    let logicalDeadline = note.time + missWindow;
+    if (note.type === "deong" && note.partial) {
+      logicalDeadline = Math.max(
+        note.time + TIMING_POLICY.deongPartialMissWindowSec,
+        compoundCompletionDeadline(note) + TIMING_POLICY.partialCompletionGraceSec,
+      );
+    }
+    if (note.type === "gideok" && note.partial) {
+      logicalDeadline = Math.max(
+        note.time + TIMING_POLICY.gideokPartialMissWindowSec,
+        compoundCompletionDeadline(note) + TIMING_POLICY.partialCompletionGraceSec,
+      );
+    }
+    return logicalDeadline + TIMING_POLICY.missCommitGraceSec;
   }
 
   function markMisses(elapsed) {
     for (const note of state.chart) {
       if (note.decorative || note.judged) continue;
       if (note.type === "roll" && note.partial?.active) continue;
-      let missDeadline = note.time
-        + (note.type === "roll" ? TIMING_POLICY.rollMissWindowSec : TIMING_POLICY.missWindowSec)
-        + TIMING_POLICY.missCommitGraceSec;
-      if (note.type === "deong" && note.partial) {
-        missDeadline = Math.max(
-          note.time + TIMING_POLICY.deongPartialMissWindowSec + TIMING_POLICY.missCommitGraceSec,
-          note.partial.time + TIMING_POLICY.deongGapSec + TIMING_POLICY.partialCompletionGraceSec + TIMING_POLICY.missCommitGraceSec,
-        );
-      }
-      if (note.type === "gideok" && note.partial) {
-        missDeadline = Math.max(
-          note.time + TIMING_POLICY.gideokPartialMissWindowSec + TIMING_POLICY.missCommitGraceSec,
-          note.partial.startedAt + TIMING_POLICY.gideokGapSec + TIMING_POLICY.partialCompletionGraceSec + TIMING_POLICY.missCommitGraceSec,
-        );
-      }
-      if (elapsed <= missDeadline) continue;
+      if (elapsed <= missCommitDeadline(note)) continue;
       note.judged = true;
       note.result = "miss";
       note.partial = null;
@@ -734,7 +759,7 @@
       if (note.decorative || note.judged) continue;
       if (!noteAcceptsInput(note, type)) continue;
       const windowSec = note.type === "roll" ? TIMING_POLICY.rollInputWindowSec : TIMING_POLICY.inputWindowSec;
-      const distance = note.partial && (note.type === "gideok" || note.type === "deong") ? 0 : Math.abs(note.time - elapsed);
+      const distance = canCompleteCompoundNote(note, type, elapsed) ? 0 : Math.abs(note.time - elapsed);
       if (distance <= windowSec + TIMING_EPSILON_SEC && distance < smallest) {
         candidate = note;
         smallest = distance;
@@ -754,16 +779,14 @@
         showFeedback("덩!", type === "kung" ? "덕도 같이 쳐요" : "쿵도 같이 쳐요", "partial");
         return;
       }
-      if (candidate.partial.type === type) {
+      if (!canCompleteCompoundNote(candidate, type, elapsed)) {
+        const repeatedSide = candidate.partial.type === type;
         candidate.partial = { type, sourceId, time: elapsed };
-        return;
-      }
-      if (Math.abs(elapsed - candidate.partial.time) > TIMING_POLICY.deongGapSec + TIMING_EPSILON_SEC) {
-        candidate.partial = { type, sourceId, time: elapsed };
-        showFeedback("함께!", "두 소리를 더 가깝게", "partial");
+        if (!repeatedSide) showFeedback("함께!", "두 소리를 더 가깝게", "partial");
         return;
       }
       const combinedTime = (elapsed + candidate.partial.time) / 2;
+      candidate.partial = null;
       judge(candidate, combinedTime - candidate.time, true);
       return;
     }
@@ -774,14 +797,14 @@
         showFeedback("기-", "채편을 한 번 더 빠르게!", "partial");
         return;
       }
-      const gap = elapsed - candidate.partial.startedAt;
-      if (gap > TIMING_POLICY.gideokGapSec + TIMING_EPSILON_SEC) {
+      if (!canCompleteCompoundNote(candidate, type, elapsed)) {
         candidate.partial = { sourceId, startedAt: elapsed, taps: 1 };
         showFeedback("기-", "두 타격을 더 가깝게", "partial");
         return;
       }
-      judge(candidate, candidate.partial.startedAt - candidate.time, false);
-      showFeedback("기덕!", "앞꾸밈과 채가 붙었어요", "perfect");
+      const startedAt = candidate.partial.startedAt;
+      candidate.partial = null;
+      judge(candidate, startedAt - candidate.time, false);
       return;
     }
 
@@ -800,7 +823,6 @@
       const note = activeRoll.note;
       activeRoll.active = false;
       judge(note, activeRoll.judgmentAt - note.time, false);
-      showFeedback("더러러러!", "채편 굴림이 이어졌어요", "perfect");
       activeRoll = null;
     } else {
       activeRoll.active = false;

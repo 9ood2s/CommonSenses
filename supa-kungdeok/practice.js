@@ -3,7 +3,15 @@
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function eventPerformanceTime(timeStamp) {
+    const now = performance.now();
+    let eventTime = Number(timeStamp);
+    if (!Number.isFinite(eventTime) || eventTime <= 0) return now;
+    if (eventTime > now + 60000 && Number.isFinite(performance.timeOrigin)) eventTime -= performance.timeOrigin;
+    if (!Number.isFinite(eventTime) || Math.abs(eventTime - now) > 60000) return now;
+    return Math.min(eventTime, now);
+  }
 
   const SAMPLE_FILES = {
     buk: "./assets/audio/janggu-bukpyeon-one-shot.wav",
@@ -22,7 +30,13 @@
     simultaneousMs: 170,
     doubleTapMs: 300,
     doubleTapMinMs: 0,
-    rollHoldMs: 360,
+    rollHoldMs: 220,
+  };
+
+  const METRONOME_TIMING = {
+    startLeadSec: 0.07,
+    lookaheadSec: 0.12,
+    schedulerIntervalMs: 25,
   };
 
   const PATTERNS = {
@@ -40,7 +54,7 @@
       ticksPerBeat: 3,
       layoutColumns: 4,
       phrase: "덩-기덕 / 쿵 더러러러 / 쿵-기덕 / 쿵 더러러러",
-      note: "국립국악원 교육 자료의 굿거리 기본형입니다. 시각 안내만 움직이며 장단 소리는 자동으로 재생하지 않습니다.",
+      note: "국립국악원 교육 자료의 굿거리 기본형입니다. 메트로놈은 박과 세부박만 들려주며 장구 장단은 자동으로 재생하지 않습니다.",
       events: [
         { step: 0, type: "deong" }, { step: 2, type: "gideok" },
         { step: 3, type: "kung" }, { step: 4, type: "roll", holdSteps: 2 },
@@ -196,11 +210,14 @@
       this.buffers = new Map();
       this.loading = null;
       this.nodes = new Set();
+      this.inputNodes = new Set();
+      this.metronomeNodes = new Set();
+      this.rollNodes = new Map();
     }
 
     get time() { return this.context ? this.context.currentTime : 0; }
 
-    async ensure() {
+    async ensureContext() {
       if (window.location.protocol === "file:") {
         throw new Error("파일을 직접 열면 브라우저가 장구 소리를 차단합니다. 정적 서버에서 practice.html을 열어 주세요.");
       }
@@ -213,6 +230,10 @@
         this.master.connect(this.context.destination);
       }
       if (this.context.state === "suspended") await this.context.resume();
+    }
+
+    async ensure() {
+      await this.ensureContext();
       if (!this.loading) this.loading = this.loadAll();
       try {
         await this.loading;
@@ -230,9 +251,9 @@
       }));
     }
 
-    play(key, when = this.time, gainValue = 0.7) {
+    play(key, when = this.time, gainValue = 0.7, collection = null) {
       const buffer = this.buffers.get(key);
-      if (!buffer || !this.context) return;
+      if (!buffer || !this.context) return null;
       const source = this.context.createBufferSource();
       const gain = this.context.createGain();
       source.buffer = buffer;
@@ -240,30 +261,97 @@
       source.connect(gain).connect(this.master);
       source.start(Math.max(this.time, when));
       this.nodes.add(source);
+      collection?.add(source);
       source.addEventListener("ended", () => {
         this.nodes.delete(source);
+        collection?.delete(source);
         source.disconnect();
         gain.disconnect();
       }, { once: true });
+      return source;
     }
 
-    playRollContinuation() {
-      const start = this.time + 0.018;
-      [0, 0.072, 0.144].forEach((offset, index) => this.play("chae", start + offset, 0.52 - index * 0.06));
+    playRollContinuation(ownerId, when = this.time + 0.008) {
+      this.stopRoll(ownerId);
+      const start = Math.max(this.time, when);
+      const group = new Set();
+      this.rollNodes.set(ownerId, group);
+      [0, 0.072, 0.144].forEach((offset, index) => {
+        const source = this.play("chae", start + offset, 0.52 - index * 0.06, group);
+        source?.addEventListener("ended", () => {
+          if (group.size === 0 && this.rollNodes.get(ownerId) === group) this.rollNodes.delete(ownerId);
+        }, { once: true });
+      });
+    }
+
+    stopRoll(ownerId) {
+      const group = this.rollNodes.get(ownerId);
+      if (!group) return;
+      for (const source of group) {
+        try { source.stop(this.time); } catch (_) { /* already ended */ }
+      }
+      this.rollNodes.delete(ownerId);
+    }
+
+    stopAllRolls() {
+      for (const ownerId of [...this.rollNodes.keys()]) this.stopRoll(ownerId);
+    }
+
+    stopAllInputs() {
+      for (const source of this.inputNodes) {
+        try { source.stop(this.time); } catch (_) { /* already ended */ }
+      }
+      this.inputNodes.clear();
+    }
+
+    playMetronome(when, emphasis = "subdivision") {
+      if (!this.context || !this.master) return;
+      const start = Math.max(this.time, when);
+      const first = emphasis === "first";
+      const beat = emphasis === "beat";
+      const duration = first ? 0.065 : beat ? 0.052 : 0.035;
+      const oscillator = this.context.createOscillator();
+      const gain = this.context.createGain();
+      oscillator.type = first ? "triangle" : "sine";
+      oscillator.frequency.setValueAtTime(first ? 1120 : beat ? 860 : 620, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(first ? 0.22 : beat ? 0.14 : 0.065, start + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain).connect(this.master);
+      const entry = { oscillator, gain };
+      this.metronomeNodes.add(entry);
+      oscillator.addEventListener("ended", () => {
+        this.metronomeNodes.delete(entry);
+        oscillator.disconnect();
+        gain.disconnect();
+      }, { once: true });
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.015);
+    }
+
+    stopMetronome() {
+      for (const entry of this.metronomeNodes) {
+        try { entry.oscillator.stop(this.time); } catch (_) { /* already ended */ }
+      }
+      this.metronomeNodes.clear();
     }
 
     stopAll() {
+      this.stopMetronome();
+      this.stopAllInputs();
+      this.stopAllRolls();
       for (const source of this.nodes) {
         try { source.stop(this.time); } catch (_) { /* already ended */ }
       }
       this.nodes.clear();
+      this.rollNodes.clear();
     }
   }
 
   const elements = {
     tabs: $$(".pattern-tab"),
     tempo: $("#tempoRange"), tempoValue: $("#tempoValue"), beatUnit: $("#beatUnit"),
-    startGuide: $("#startGuideButton"), restartGuide: $("#restartGuideButton"), stopGuide: $("#stopGuideButton"),
+    startMetronome: $("#startMetronomeButton"), restartMetronome: $("#restartMetronomeButton"), stopMetronome: $("#stopMetronomeButton"),
     status: $("#practiceStatus"), grid: $("#beatGrid"),
     patternKind: $("#patternKind"), patternTitle: $("#patternTitle"), meterLabel: $("#meterLabel"),
     patternPhrase: $("#patternPhrase"), patternNote: $("#patternNote"),
@@ -276,11 +364,21 @@
   const activeGestures = new Set();
   const heldKeys = new Set();
   let selectedPattern = PATTERNS.gutgeori;
-  let guideRunning = false;
-  let guideOriginMs = 0;
-  let guideFrame = 0;
-  let currentStep = -1;
+  let metronomeRunning = false;
+  let metronomeTimer = 0;
+  let metronomeRequest = 0;
+  let metronomeOriginAt = 0;
+  let metronomeTickIndex = 0;
+  let tempoRestartTimer = 0;
   let gestureSequence = 0;
+  let inputGeneration = 0;
+  const pendingInputSounds = [];
+  let inputSoundFlushPromise = null;
+
+  function discardPendingInputSounds() {
+    for (const request of pendingInputSounds) request.resolveScheduled(null);
+    pendingInputSounds.length = 0;
+  }
 
   function totalSteps(pattern = selectedPattern) {
     return pattern.beatsPerBar * pattern.ticksPerBeat;
@@ -351,6 +449,10 @@
   }
 
   function resetGestureState() {
+    inputGeneration += 1;
+    discardPendingInputSounds();
+    audio.stopAllInputs();
+    audio.stopAllRolls();
     for (const gesture of activeGestures) {
       if (gesture.deongTimer) window.clearTimeout(gesture.deongTimer);
       if (gesture.gideokTimer) window.clearTimeout(gesture.gideokTimer);
@@ -371,7 +473,7 @@
 
   function renderPattern() {
     resetGestureState();
-    stopGuide(false);
+    stopMetronome(false);
     elements.patternKind.textContent = selectedPattern.kind;
     elements.patternTitle.textContent = selectedPattern.title;
     elements.meterLabel.textContent = selectedPattern.meterLabel;
@@ -414,17 +516,13 @@
       }
       elements.grid.append(group);
     }
-    setGuideStep(-1);
+    elements.beatPosition.textContent = "메트로놈 준비";
+    elements.currentStroke.textContent = "장단을 고르고 직접 연주해 보세요";
   }
 
   function updateTempoLabel() {
     elements.tempoValue.textContent = `${elements.tempo.value} BPM`;
     elements.tempo.setAttribute("aria-valuetext", `${selectedPattern.beatUnit} = ${elements.tempo.value} BPM`);
-  }
-
-  function timing() {
-    const beatMs = 60000 / Number(elements.tempo.value);
-    return { subdivisionMs: beatMs / selectedPattern.ticksPerBeat, barMs: beatMs * selectedPattern.beatsPerBar };
   }
 
   async function prepareAudio() {
@@ -437,108 +535,139 @@
     }
   }
 
-  function startGuide() {
-    guideRunning = true;
-    guideOriginMs = performance.now() + 240;
-    elements.startGuide.setAttribute("aria-pressed", "true");
-    elements.startGuide.textContent = "시각 안내 다시 시작 ↻";
-    elements.stopGuide.disabled = false;
-    elements.status.textContent = "자동 소리 없이 박과 소박만 움직입니다. 직접 연주해요.";
-    setGuideStep(0);
-    if (guideFrame) cancelAnimationFrame(guideFrame);
-    guideFrame = requestAnimationFrame(updateGuide);
-  }
-
-  function updateGuide(nowMs) {
-    if (!guideRunning) return;
-    const { subdivisionMs, barMs } = timing();
-    if (nowMs < guideOriginMs) {
-      guideFrame = requestAnimationFrame(updateGuide);
-      return;
+  async function prepareMetronome() {
+    try {
+      await audio.ensureContext();
+      return true;
+    } catch (error) {
+      elements.status.textContent = error.message;
+      return false;
     }
-    const elapsed = (nowMs - guideOriginMs) % barMs;
-    const nextStep = clamp(Math.floor(elapsed / subdivisionMs), 0, totalSteps() - 1);
-    if (nextStep !== currentStep) setGuideStep(nextStep);
-    guideFrame = requestAnimationFrame(updateGuide);
   }
 
-  function restartGuide() {
-    guideOriginMs = performance.now() + 240;
-    setGuideStep(0);
-    if (!guideRunning) elements.status.textContent = "첫 박으로 돌아왔습니다. 시각 안내를 시작하거나 자유롭게 연주해요.";
+  function clearMetronomeScheduler() {
+    if (metronomeTimer) window.clearTimeout(metronomeTimer);
+    metronomeTimer = 0;
+    audio.stopMetronome();
   }
 
-  function stopGuide(updateStatus = true) {
-    guideRunning = false;
-    if (guideFrame) cancelAnimationFrame(guideFrame);
-    guideFrame = 0;
-    elements.startGuide.setAttribute("aria-pressed", "false");
-    elements.startGuide.textContent = "시각 안내 시작 ▶";
-    elements.stopGuide.disabled = true;
-    setGuideStep(-1);
-    if (updateStatus) elements.status.textContent = "시각 안내를 멈췄습니다. 자유롭게 직접 연주할 수 있어요.";
+  function scheduleMetronome() {
+    if (!metronomeRunning || !audio.context) return;
+    const beatSec = 60 / Number(elements.tempo.value);
+    const tickSec = beatSec / selectedPattern.ticksPerBeat;
+    const ticksPerBar = selectedPattern.beatsPerBar * selectedPattern.ticksPerBeat;
+    const now = audio.time;
+    let nextBeatAt = metronomeOriginAt + metronomeTickIndex * tickSec;
+    if (nextBeatAt < now - 0.02) {
+      metronomeTickIndex = Math.floor((now - metronomeOriginAt) / tickSec) + 1;
+      nextBeatAt = metronomeOriginAt + metronomeTickIndex * tickSec;
+    }
+    const horizon = now + METRONOME_TIMING.lookaheadSec;
+    while (nextBeatAt <= horizon) {
+      const barTick = metronomeTickIndex % ticksPerBar;
+      const emphasis = barTick === 0 ? "first" : barTick % selectedPattern.ticksPerBeat === 0 ? "beat" : "subdivision";
+      audio.playMetronome(nextBeatAt, emphasis);
+      metronomeTickIndex += 1;
+      nextBeatAt = metronomeOriginAt + metronomeTickIndex * tickSec;
+    }
+    metronomeTimer = window.setTimeout(scheduleMetronome, METRONOME_TIMING.schedulerIntervalMs);
   }
 
-  function keepActiveBeatVisible(group) {
-    if (!guideRunning || !group || window.innerWidth > 820) return;
-    const groupRect = group.getBoundingClientRect();
-    const nowPlayingRect = elements.beatPosition.closest(".now-playing").getBoundingClientRect();
-    const padRect = elements.bukPad.closest(".audition-card").getBoundingClientRect();
-    const topGuard = Math.max(8, nowPlayingRect.bottom + 12);
-    const bottomGuard = Math.min(window.innerHeight - 12, padRect.top - 12);
-    let delta = 0;
-    if (groupRect.top < topGuard) delta = groupRect.top - topGuard;
-    else if (groupRect.bottom > bottomGuard) delta = groupRect.bottom - bottomGuard;
-    if (Math.abs(delta) < 4) return;
-    window.scrollBy({ top: delta, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  function beginMetronome(statusText) {
+    clearMetronomeScheduler();
+    metronomeRunning = true;
+    metronomeTickIndex = 0;
+    metronomeOriginAt = audio.time + METRONOME_TIMING.startLeadSec;
+    elements.startMetronome.setAttribute("aria-pressed", "true");
+    elements.startMetronome.textContent = "첫 박부터 다시 ▶";
+    elements.stopMetronome.disabled = false;
+    elements.beatPosition.textContent = "메트로놈 재생 중";
+    elements.currentStroke.textContent = "첫 박은 높게, 세부박은 작게 들려요";
+    elements.status.textContent = statusText;
+    scheduleMetronome();
   }
 
-  function setGuideStep(step) {
-    currentStep = step;
-    $$(".step-cell").forEach((cell) => cell.classList.toggle("is-active", Number(cell.dataset.step) === step));
-    let activeGroup = null;
-    $$(".beat-group").forEach((group) => {
-      const active = step >= 0 && Number(group.dataset.beat) === Math.floor(step / selectedPattern.ticksPerBeat);
-      group.classList.toggle("is-active", active);
-      if (active) activeGroup = group;
+  async function startMetronome(statusText = "메트로놈과 내 입력 소리만 들립니다. 장구 장단은 직접 연주해요.") {
+    const request = ++metronomeRequest;
+    if (!await prepareMetronome() || request !== metronomeRequest || document.hidden) return;
+    beginMetronome(statusText);
+  }
+
+  function restartMetronome(updateStatus = true) {
+    return startMetronome(updateStatus ? "첫 박부터 메트로놈을 다시 시작했습니다." : "메트로놈 빠르기를 바꿨습니다. 장구 장단은 직접 연주해요.");
+  }
+
+  function stopMetronome(updateStatus = true) {
+    metronomeRequest += 1;
+    metronomeRunning = false;
+    if (tempoRestartTimer) window.clearTimeout(tempoRestartTimer);
+    tempoRestartTimer = 0;
+    clearMetronomeScheduler();
+    elements.startMetronome.setAttribute("aria-pressed", "false");
+    elements.startMetronome.textContent = "메트로놈 시작 ▶";
+    elements.stopMetronome.disabled = true;
+    elements.beatPosition.textContent = "메트로놈 준비";
+    if (updateStatus) elements.status.textContent = "메트로놈을 멈췄습니다. 자유롭게 직접 연주할 수 있어요.";
+  }
+
+  function flushInputSoundQueue() {
+    if (inputSoundFlushPromise) return;
+    inputSoundFlushPromise = (async () => {
+      if (!await prepareAudio()) {
+        discardPendingInputSounds();
+        return;
+      }
+      if (document.hidden) {
+        discardPendingInputSounds();
+        return;
+      }
+
+      const generation = inputGeneration;
+      const queued = pendingInputSounds.splice(0);
+      const batch = queued.filter((request) => request.generation === generation);
+      for (const request of queued) {
+        if (request.generation !== generation) request.resolveScheduled(null);
+      }
+      if (!batch.length) return;
+      const firstInputAtMs = batch[0].inputAtMs;
+      const firstSoundAt = audio.time + 0.012;
+      for (const request of batch) {
+        const relativeSec = Math.max(0, (request.inputAtMs - firstInputAtMs) / 1000);
+        const key = request.type === "kung" ? "buk" : "chae";
+        const gain = request.type === "kung" ? 0.72 : request.weak ? 0.42 : 0.64;
+        const scheduledAt = firstSoundAt + relativeSec;
+        const source = audio.play(key, scheduledAt, gain, audio.inputNodes);
+        request.resolveScheduled(source ? scheduledAt : null);
+      }
+    })().catch((error) => {
+      discardPendingInputSounds();
+      elements.status.textContent = error.message;
+    }).finally(() => {
+      inputSoundFlushPromise = null;
+      if (pendingInputSounds.length) flushInputSoundQueue();
     });
-    if (step < 0) {
-      elements.beatPosition.textContent = "준비";
-      elements.currentStroke.textContent = "장단을 고르고 직접 연주해 보세요";
-      return;
-    }
-    const event = eventAtStep(step);
-    const rollOwner = rollOwnerAtStep(step);
-    elements.beatPosition.textContent = `제${Math.floor(step / selectedPattern.ticksPerBeat) + 1}박 · ${tickLabel(step % selectedPattern.ticksPerBeat)}`;
-    elements.currentStroke.textContent = event ? `${eventLabel(event)}${event.weak ? "(약하게)" : ""} 자리 — 직접 연주해요` : rollOwner ? "더러러러를 계속 유지하는 자리" : "쉼 — 다음 타격을 기다려요";
-    keepActiveBeatVisible(activeGroup);
   }
 
-  async function playInput(type, weak = false) {
-    if (!await prepareAudio()) return;
-    audio.play(type === "kung" ? "buk" : "chae", audio.time + 0.012, type === "kung" ? 0.72 : weak ? 0.42 : 0.64);
+  function playInput(type, weak = false, inputAtMs = performance.now()) {
+    let resolveScheduled;
+    const scheduled = new Promise((resolve) => { resolveScheduled = resolve; });
+    pendingInputSounds.push({ type, weak, inputAtMs, generation: inputGeneration, resolveScheduled });
+    flushInputSoundQueue();
+    return scheduled;
   }
 
-  async function playRollContinuation() {
-    if (!await prepareAudio()) return;
-    audio.playRollContinuation();
+  async function playRollContinuation(gesture) {
+    const generation = inputGeneration;
+    const inputSoundAt = await gesture.inputSoundPromise;
+    if (inputSoundAt === null || generation !== inputGeneration || gesture.cancelled || !gesture.rollRecognized || document.hidden) return;
+    const preservedHoldAt = inputSoundAt + INPUT_TIMING.rollHoldMs / 1000 - 0.004;
+    audio.playRollContinuation(gesture.id, Math.max(audio.time + 0.008, preservedHoldAt));
   }
 
-  function announceStroke(type, guideStep = currentStep) {
+  function announceStroke(type) {
     const played = STROKE_NAMES[type];
-    if (!guideRunning || guideStep < 0) {
-      elements.currentStroke.textContent = `방금 연주: ${played}`;
-      elements.beatPosition.textContent = "자유 연주";
-      return;
-    }
-    const expected = eventAtStep(guideStep);
-    const rollOwner = rollOwnerAtStep(guideStep);
-    if (expected?.type === type || (type === "roll" && (expected?.type === "roll" || rollOwner))) {
-      elements.currentStroke.textContent = `좋아요 · 현재 ${expected?.weak ? `${eventLabel(expected)}(약하게)` : played} 자리`;
-      return;
-    }
-    const expectedLabel = expected ? eventLabel(expected) : rollOwner ? "더러러러 유지" : "쉼";
-    elements.currentStroke.textContent = `방금 ${played} · 현재는 ${expectedLabel} 자리`;
+    elements.currentStroke.textContent = `방금 연주: ${played}`;
+    elements.beatPosition.textContent = metronomeRunning ? "메트로놈 재생 중" : "자유 연주";
   }
 
   function clearGestureTimer(gesture, key) {
@@ -569,18 +698,37 @@
     clearGestureTimer(gesture, "deongTimer");
     clearGestureTimer(gesture, "gideokTimer");
     clearGestureTimer(gesture, "rollTimer");
-    announceStroke("roll", gesture.guideStep);
-    playRollContinuation();
+    announceStroke("roll");
+    playRollContinuation(gesture);
     retireGesture(gesture);
+  }
+
+  function scheduleRollRecognition(gesture) {
+    const remainingMs = INPUT_TIMING.rollHoldMs + 1 - (performance.now() - gesture.startedAtMs);
+    const delayMs = remainingMs <= 0 ? 8 : remainingMs;
+    gesture.rollTimer = window.setTimeout(() => {
+      gesture.rollTimer = 0;
+      if (performance.now() - gesture.startedAtMs + 0.001 < INPUT_TIMING.rollHoldMs) {
+        scheduleRollRecognition(gesture);
+        return;
+      }
+      recognizeRoll(gesture);
+    }, delayMs);
   }
 
   function findGideokGesture(currentGesture) {
     let nearest = null;
     let nearestGap = Infinity;
     for (const gesture of activeGestures) {
-      if (gesture === currentGesture || gesture.type !== "deok" || gesture.cancelled || gesture.consumed) continue;
+      if (gesture === currentGesture || gesture.type !== "deok" || gesture.cancelled) continue;
       const gap = currentGesture.startedAtMs - gesture.startedAtMs;
       if (gap < INPUT_TIMING.doubleTapMinMs || gap > INPUT_TIMING.doubleTapMs || gap >= nearestGap) continue;
+      if (gesture.rollRecognized) {
+        if (!gesture.held || gap > INPUT_TIMING.rollHoldMs) continue;
+        audio.stopRoll(gesture.id);
+        gesture.rollRecognized = false;
+        gesture.consumed = false;
+      } else if (gesture.consumed) continue;
       nearest = gesture;
       nearestGap = gap;
     }
@@ -601,17 +749,16 @@
     return nearest;
   }
 
-  function inputDown(type, sourceId, pad) {
+  function inputDown(type, sourceId, pad, timeStamp) {
     const sources = heldSources[type];
     if (sources.has(sourceId)) return;
 
-    const nowMs = performance.now();
+    const nowMs = eventPerformanceTime(timeStamp);
     const gesture = {
       id: ++gestureSequence,
       type,
       sourceId,
       startedAtMs: nowMs,
-      guideStep: currentStep,
       held: true,
       cancelled: false,
       consumed: false,
@@ -625,8 +772,7 @@
     activeGestures.add(gesture);
     pad.classList.add("is-pressed");
 
-    const expectedNow = guideRunning && currentStep >= 0 ? eventAtStep(currentStep) : null;
-    playInput(type, type === "deok" && expectedNow?.weak === true);
+    gesture.inputSoundPromise = playInput(type, false, nowMs);
     announceStroke(type);
 
     gesture.deongTimer = window.setTimeout(() => {
@@ -639,7 +785,7 @@
       if (gideokGesture) {
         consumeGesture(gideokGesture);
         consumeGesture(gesture);
-        announceStroke("gideok", gesture.guideStep);
+        announceStroke("gideok");
         return;
       }
     }
@@ -659,13 +805,10 @@
       gesture.gideokTimer = 0;
       retireGesture(gesture);
     }, INPUT_TIMING.doubleTapMs + 1);
-    gesture.rollTimer = window.setTimeout(() => {
-      gesture.rollTimer = 0;
-      recognizeRoll(gesture);
-    }, INPUT_TIMING.rollHoldMs);
+    scheduleRollRecognition(gesture);
   }
 
-  function inputUp(type, sourceId, pad) {
+  function inputUp(type, sourceId, pad, timeStamp) {
     const sources = heldSources[type];
     const gesture = sources.get(sourceId);
     if (!gesture) return;
@@ -678,7 +821,7 @@
     }
 
     clearGestureTimer(gesture, "rollTimer");
-    if (!gesture.rollRecognized && !gesture.cancelled && !gesture.consumed && performance.now() - gesture.startedAtMs >= INPUT_TIMING.rollHoldMs) {
+    if (!gesture.rollRecognized && !gesture.cancelled && !gesture.consumed && eventPerformanceTime(timeStamp) - gesture.startedAtMs >= INPUT_TIMING.rollHoldMs) {
       recognizeRoll(gesture, true);
     }
     retireGesture(gesture);
@@ -692,6 +835,7 @@
     gesture.held = false;
     gesture.cancelled = true;
     gesture.consumed = true;
+    audio.stopRoll(gesture.id);
     clearGestureTimer(gesture, "deongTimer");
     clearGestureTimer(gesture, "gideokTimer");
     clearGestureTimer(gesture, "rollTimer");
@@ -703,9 +847,9 @@
     button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       try { button.setPointerCapture?.(event.pointerId); } catch (_) { /* capture is an enhancement */ }
-      inputDown(type, `pointer:${event.pointerId}`, button);
+      inputDown(type, `pointer:${event.pointerId}`, button, event.timeStamp);
     });
-    const releasePointer = (event) => inputUp(type, `pointer:${event.pointerId}`, button);
+    const releasePointer = (event) => inputUp(type, `pointer:${event.pointerId}`, button, event.timeStamp);
     const cancelPointer = (event) => cancelInput(type, `pointer:${event.pointerId}`, button);
     button.addEventListener("pointerup", releasePointer);
     button.addEventListener("pointercancel", cancelPointer);
@@ -713,8 +857,8 @@
     button.addEventListener("click", (event) => {
       if (event.detail !== 0) return;
       const sourceId = `button:${type}`;
-      inputDown(type, sourceId, button);
-      window.setTimeout(() => inputUp(type, sourceId, button), 85);
+      inputDown(type, sourceId, button, event.timeStamp);
+      window.setTimeout(() => inputUp(type, sourceId, button, performance.now()), 85);
     });
   }
 
@@ -731,19 +875,26 @@
 
   elements.tempo.addEventListener("input", () => {
     updateTempoLabel();
-    if (guideRunning) restartGuide();
-    elements.status.textContent = `시각 안내를 ${selectedPattern.beatUnit}=${elements.tempo.value}로 맞췄습니다. 자동 소리는 나지 않습니다.`;
+    if (tempoRestartTimer) window.clearTimeout(tempoRestartTimer);
+    if (metronomeRunning) {
+      clearMetronomeScheduler();
+      tempoRestartTimer = window.setTimeout(() => {
+        tempoRestartTimer = 0;
+        restartMetronome(false);
+      }, 120);
+    }
+    elements.status.textContent = `메트로놈을 ${selectedPattern.beatUnit}=${elements.tempo.value}로 맞췄습니다. 장구 장단은 직접 연주합니다.`;
   });
-  elements.startGuide.addEventListener("click", startGuide);
-  elements.restartGuide.addEventListener("click", restartGuide);
-  elements.stopGuide.addEventListener("click", () => stopGuide());
+  elements.startMetronome.addEventListener("click", () => startMetronome());
+  elements.restartMetronome.addEventListener("click", () => restartMetronome());
+  elements.stopMetronome.addEventListener("click", () => stopMetronome());
 
   bindPad(elements.bukPad, "kung");
   bindPad(elements.chaePad, "deok");
   const releasePointerAnywhere = (event) => {
     const sourceId = `pointer:${event.pointerId}`;
-    inputUp("kung", sourceId, elements.bukPad);
-    inputUp("deok", sourceId, elements.chaePad);
+    inputUp("kung", sourceId, elements.bukPad, event.timeStamp);
+    inputUp("deok", sourceId, elements.chaePad, event.timeStamp);
   };
   const cancelPointerAnywhere = (event) => {
     const sourceId = `pointer:${event.pointerId}`;
@@ -759,27 +910,32 @@
     if (!type) return;
     event.preventDefault();
     heldKeys.add(event.code);
-    inputDown(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad);
+    inputDown(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad, event.timeStamp);
   });
   window.addEventListener("keyup", (event) => {
     const type = event.code === "KeyS" ? "kung" : event.code === "KeyK" ? "deok" : null;
     if (!type) return;
-    inputUp(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad);
+    inputUp(type, `key:${event.code}`, type === "kung" ? elements.bukPad : elements.chaePad, event.timeStamp);
     heldKeys.delete(event.code);
   });
-  window.addEventListener("blur", resetGestureState);
+  window.addEventListener("blur", () => {
+    resetGestureState();
+    stopMetronome(false);
+    audio.stopAll();
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) return;
     resetGestureState();
-    if (guideRunning) stopGuide(false);
+    stopMetronome(false);
+    audio.stopAll();
   });
   window.addEventListener("pagehide", () => {
     resetGestureState();
-    stopGuide(false);
+    stopMetronome(false);
     audio.stopAll();
   });
   window.addEventListener("beforeunload", () => {
-    stopGuide(false);
+    stopMetronome(false);
     audio.stopAll();
   });
 
