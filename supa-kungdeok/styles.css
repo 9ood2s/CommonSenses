@@ -458,7 +458,7 @@ kbd {
   font-size: clamp(55px, 8vw, 105px);
   text-shadow: 5px 5px 0 var(--ink);
   box-shadow: 0 0 0 12px var(--red), 0 0 0 21px var(--ink);
-  animation: count-pop .6s ease-out;
+  animation: count-pop .46s ease-out;
 }
 
 .overlay {

@@ -36,6 +36,9 @@
 
   const MIN_GAME_DURATION_SEC = 20;
   const MAX_GAME_DURATION_SEC = 26;
+  const COUNT_IN_BEATS = 4;
+  const FIRST_NOTE_PREVIEW_BEATS = 1;
+  const TIMING_EPSILON_SEC = 0.000001;
   const HIT_CUE_OFFSETS_SEC = {
     bukpyeon: 0,
     chaepyeon: 0,
@@ -396,6 +399,7 @@
     timingErrors: [],
     beatGrid: [],
     countInBeatSec: 0,
+    countdownClearAt: 0,
   };
 
   function getDuration(song = selectedSong) { return song.barTimes[song.barTimes.length - 1]; }
@@ -498,6 +502,7 @@
       score: 0, combo: 0, maxCombo: 0, perfect: 0, great: 0, good: 0, miss: 0,
       judged: 0, timingErrors: [], beatGrid: buildBeatGrid(song),
       countInBeatSec: getCountInBeatSec(song),
+      countdownClearAt: 0,
     });
     particles.length = 0;
     rings.length = 0;
@@ -538,11 +543,15 @@
     elements.resultOverlay.classList.remove("overlay--open");
     elements.resultOverlay.setAttribute("aria-hidden", "true");
     elements.game.dataset.phase = "countIn";
-    elements.countdown.setAttribute("aria-hidden", "false");
     const beatSec = state.countInBeatSec;
-    state.songStart = audio.time + beatSec * 4 + 0.16;
+    state.songStart = audio.time + beatSec * COUNT_IN_BEATS + 0.16;
+    state.countdownClearAt = state.songStart - beatSec * FIRST_NOTE_PREVIEW_BEATS;
+    lastCountdown = COUNT_IN_BEATS - FIRST_NOTE_PREVIEW_BEATS;
+    elements.countdownValue.textContent = String(lastCountdown);
+    elements.countdownValue.style.animation = "";
+    elements.countdown.setAttribute("aria-hidden", "false");
     audio.playBacking(song, state.songStart, state.runDuration);
-    for (let index = 4; index > 0; index -= 1) {
+    for (let index = COUNT_IN_BEATS; index > 0; index -= 1) {
       audio.count(state.songStart - index * beatSec, index === 1);
     }
     elements.startStatus.textContent = "";
@@ -582,16 +591,21 @@
   }
 
   function updateCountdown(now) {
-    const beatsLeft = Math.ceil((state.songStart - now) / state.countInBeatSec);
-    const display = clamp(beatsLeft, 1, 4);
+    if (now >= state.songStart) {
+      enterPlaying();
+      return;
+    }
+    if (now >= state.countdownClearAt) {
+      elements.countdown.setAttribute("aria-hidden", "true");
+      return;
+    }
+    const beatsLeft = Math.ceil((state.countdownClearAt - now) / state.countInBeatSec);
+    const display = clamp(beatsLeft, 1, COUNT_IN_BEATS - FIRST_NOTE_PREVIEW_BEATS);
     if (display !== lastCountdown) {
       lastCountdown = display;
       elements.countdownValue.textContent = String(display);
       elements.countdownValue.style.animation = "none";
       requestAnimationFrame(() => { elements.countdownValue.style.animation = ""; });
-    }
-    if (now >= state.songStart) {
-      enterPlaying();
     }
   }
 
@@ -600,7 +614,6 @@
     state.phase = "playing";
     elements.game.dataset.phase = "playing";
     elements.countdown.setAttribute("aria-hidden", "true");
-    showFeedback("시작!", "장단을 타요", "perfect");
   }
 
   function updateBeat(elapsed) {
@@ -635,8 +648,8 @@
     if (activeRoll?.active || heldInputs.deok.size === 0) return;
     const candidate = state.chart.find((note) => (
       !note.decorative && !note.judged && note.type === "roll"
-      && elapsed >= note.time - TIMING_POLICY.rollInputWindowSec
-      && elapsed <= note.time + TIMING_POLICY.rollInputWindowSec
+      && elapsed >= note.time - TIMING_POLICY.rollInputWindowSec - TIMING_EPSILON_SEC
+      && elapsed <= note.time + TIMING_POLICY.rollInputWindowSec + TIMING_EPSILON_SEC
     ));
     if (!candidate) return;
     const owner = [...heldInputs.deok.entries()].find(([sourceId, sourceTiming]) => (
@@ -711,7 +724,9 @@
     if (type === "kung") audio.kung(); else audio.deok();
     const elapsed = inputTiming.contextElapsed;
     if (state.phase === "countIn" && elapsed >= 0) enterPlaying();
-    if (state.phase !== "playing") return;
+    const acceptsFirstNoteLeadIn = state.phase === "countIn"
+      && elapsed >= -TIMING_POLICY.inputWindowSec - TIMING_EPSILON_SEC;
+    if (state.phase !== "playing" && !acceptsFirstNoteLeadIn) return;
 
     let candidate = null;
     let smallest = Infinity;
@@ -720,14 +735,14 @@
       if (!noteAcceptsInput(note, type)) continue;
       const windowSec = note.type === "roll" ? TIMING_POLICY.rollInputWindowSec : TIMING_POLICY.inputWindowSec;
       const distance = note.partial && (note.type === "gideok" || note.type === "deong") ? 0 : Math.abs(note.time - elapsed);
-      if (distance <= windowSec && distance < smallest) {
+      if (distance <= windowSec + TIMING_EPSILON_SEC && distance < smallest) {
         candidate = note;
         smallest = distance;
       }
     }
 
     if (!candidate) {
-      const nearby = state.chart.find((note) => !note.judged && !note.decorative && Math.abs(note.time - elapsed) <= TIMING_POLICY.inputWindowSec);
+      const nearby = state.chart.find((note) => !note.judged && !note.decorative && Math.abs(note.time - elapsed) <= TIMING_POLICY.inputWindowSec + TIMING_EPSILON_SEC);
       if (nearby) showFeedback("주법 확인!", `이번에는 ${noteName(nearby.type)}이에요`, "wrong");
       else showFeedback("엇박", elapsed < 0 ? "조금 기다려요" : "다음 노트를 봐요", "wrong");
       return;
@@ -743,7 +758,7 @@
         candidate.partial = { type, sourceId, time: elapsed };
         return;
       }
-      if (Math.abs(elapsed - candidate.partial.time) > TIMING_POLICY.deongGapSec) {
+      if (Math.abs(elapsed - candidate.partial.time) > TIMING_POLICY.deongGapSec + TIMING_EPSILON_SEC) {
         candidate.partial = { type, sourceId, time: elapsed };
         showFeedback("함께!", "두 소리를 더 가깝게", "partial");
         return;
@@ -760,7 +775,7 @@
         return;
       }
       const gap = elapsed - candidate.partial.startedAt;
-      if (gap > TIMING_POLICY.gideokGapSec) {
+      if (gap > TIMING_POLICY.gideokGapSec + TIMING_EPSILON_SEC) {
         candidate.partial = { sourceId, startedAt: elapsed, taps: 1 };
         showFeedback("기-", "두 타격을 더 가깝게", "partial");
         return;
